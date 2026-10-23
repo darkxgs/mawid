@@ -34,41 +34,47 @@ export async function api<T>(url: string, init?: RequestInit): Promise<{ ok: tru
   }
 }
 
-/** Loads availability for one service, refetching when inputs change. */
+/**
+ * Loads availability for one service, refetching when inputs change.
+ * Status is derived from which request the stored result belongs to, so no
+ * state is set synchronously inside the effect.
+ */
 export function useAvailability(url: string | null) {
-  const [state, setState] = useState<{ status: "idle" | "loading" | "ready" | "error"; days: SerializedDay[]; url: string | null }>({
-    status: "idle",
-    days: [],
-    url: null,
-  });
   const [nonce, setNonce] = useState(0);
+  const key = url ? `${url}#${nonce}` : null;
+  const [result, setResult] = useState<{ key: string; url: string; days: SerializedDay[]; ok: boolean } | null>(null);
 
   useEffect(() => {
-    if (!url) return;
+    if (!url || !key) return;
     const ctrl = new AbortController();
-    setState((s) => ({ status: "loading", days: s.url === url ? s.days : [], url }));
     fetch(url, { signal: ctrl.signal, cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((b: { days: SerializedDay[] }) => setState({ status: "ready", days: b.days, url }))
+      .then((b: { days: SerializedDay[] }) => setResult({ key, url, days: b.days, ok: true }))
       .catch((e) => {
-        if (e?.name !== "AbortError") setState((s) => ({ ...s, status: "error" }));
+        if (e?.name !== "AbortError") setResult((prev) => ({ key, url, days: prev?.url === url ? prev.days : [], ok: false }));
       });
     return () => ctrl.abort();
-  }, [url, nonce]);
+  }, [url, key]);
 
-  return { ...state, reload: () => setNonce((n) => n + 1) };
+  const status: "idle" | "loading" | "ready" | "error" = !key ? "idle" : result?.key === key ? (result.ok ? "ready" : "error") : "loading";
+  // While a request is in flight, keep the old days only if they are for the same query.
+  const days = !result ? [] : !key || result.key === key || result.url === url ? result.days : [];
+  return { status, days, url, reload: () => setNonce((n) => n + 1) };
 }
 
-/** A clock that ticks every second while `active`. */
-export function useNow(active: boolean) {
-  // Starts at 0 so server render never reads the clock; the effect sets it.
+/** A clock that ticks while `active`. Starts at 0 so render never reads the clock. */
+export function useNow(active: boolean, every = 1000) {
   const [now, setNow] = useState(0);
   useEffect(() => {
     if (!active) return;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [active]);
+    const tick = () => setNow(Date.now());
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, every);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [active, every]);
   return now;
 }
 

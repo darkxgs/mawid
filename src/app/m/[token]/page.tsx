@@ -8,6 +8,7 @@ import { canCustomerChange, getBookingByToken } from "@/server/bookings";
 import { publicBusiness } from "@/server/public";
 import { ManageView } from "@/components/booking/manage-view";
 import { isLocale } from "@/lib/format";
+import { localDate } from "@/lib/time";
 
 export const metadata: Metadata = {
   title: "Your appointment",
@@ -35,6 +36,7 @@ async function Manage({ params, searchParams }: PageProps<"/m/[token]">) {
   return (
     <ManageView
       token={token}
+      today={localDate(now, business.timezone)}
       business={publicBusiness(business, catalog)}
       initialLocale={isLocale(sp.lang) ? sp.lang : isLocale(booking.locale) ? booking.locale : "ar"}
       booking={{

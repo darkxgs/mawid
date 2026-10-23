@@ -2,7 +2,7 @@
 
 import { CalendarPlus, Check, ChevronLeft, ChevronRight, Copy, UserX } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { setStatus } from "@/app/dashboard/actions";
 import { Avatar, Button, buttonClass, cn } from "@/components/ui";
 import { formatMoney, formatTime, enDate } from "@/lib/format";
@@ -148,24 +148,29 @@ function Timeline({
   isToday: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
-  const [nowMin, setNowMin] = useState<number | null>(null);
-
-  // Live now-line: starts from the server's clock, then follows the device.
+  // Live now-line: starts from the server's clock, then advances with the device's.
+  const [drift, setDrift] = useState({ base: schedule.nowMin, minutes: 0 });
   useEffect(() => {
-    if (!isToday) return setNowMin(null);
+    if (!isToday) return;
     const base = schedule.nowMin;
     const t0 = Date.now();
-    setNowMin(base);
-    const id = setInterval(() => setNowMin(base + Math.floor((Date.now() - t0) / 60000)), 30_000);
+    const id = setInterval(() => setDrift({ base, minutes: Math.floor((Date.now() - t0) / 60000) }), 30_000);
     return () => clearInterval(id);
   }, [isToday, schedule.nowMin]);
+  const nowMin = isToday ? schedule.nowMin + (drift.base === schedule.nowMin ? drift.minutes : 0) : null;
 
   const { startMin, endMin } = useMemo(() => {
     let s = 24 * 60;
     let e = 0;
-    for (const st of schedule.staff) for (const h of st.hours) ((s = Math.min(s, h.startMin)), (e = Math.max(e, h.endMin)));
-    for (const b of schedule.bookings) ((s = Math.min(s, b.startMin)), (e = Math.max(e, b.endMin)));
-    if (s >= e) ((s = 9 * 60), (e = 18 * 60));
+    const ranges = [...schedule.staff.flatMap((st) => st.hours), ...schedule.bookings];
+    for (const r of ranges) {
+      s = Math.min(s, r.startMin);
+      e = Math.max(e, r.endMin);
+    }
+    if (s >= e) {
+      s = 9 * 60;
+      e = 18 * 60;
+    }
     return { startMin: Math.floor(s / 60) * 60, endMin: Math.ceil(e / 60) * 60 };
   }, [schedule]);
 
@@ -407,8 +412,12 @@ function CheckoutItem({ b, tz, onOpen }: { b: DashBooking; tz: string; onOpen: (
 
 function Welcome({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
+  // Read the browser's origin without an effect; the server renders a relative link.
+  const origin = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => "",
+  );
   const url = `${origin}/b/${slug}`;
   return (
     <div className="mt-6 rounded-panel border border-sea/20 bg-sea-soft p-5">

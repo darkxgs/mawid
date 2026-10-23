@@ -25,11 +25,14 @@ async function connect(): Promise<Connection> {
     // (scripts/migrate.ts), so cold starts never race each other.
     return { db: drizzlePg(client, { schema }) as unknown as DB, raw: { kind: "postgres", client } };
   }
-  // Local development without Postgres: an embedded Postgres (PGlite) on disk.
+  // No Postgres configured: an embedded Postgres (PGlite). Locally it lives in
+  // .data/; on Vercel (before a database is connected) it lives in /tmp, so a
+  // fresh deploy still serves a working, seeded demo.
   const { PGlite } = await import("@electric-sql/pglite");
   const { btree_gist } = await import("@electric-sql/pglite/contrib/btree_gist");
   const { drizzle: drizzlePglite } = await import("drizzle-orm/pglite");
-  const dir = process.env.PGLITE_DIR ?? ".data/pglite";
+  const dir = process.env.PGLITE_DIR ?? (process.env.VERCEL ? "/tmp/mawid-pglite" : ".data/pglite");
+  if (process.env.VERCEL) console.warn("[db] No DATABASE_URL: using a temporary embedded database. Connect Postgres for persistence.");
   (await import("node:fs")).mkdirSync(dir, { recursive: true });
   const client = await PGlite.create(dir, { extensions: { btree_gist } });
   const raw: MigrationTarget = { kind: "pglite", client };

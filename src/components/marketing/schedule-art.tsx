@@ -15,7 +15,7 @@ const HOURS = ["2 PM", "3 PM", "4 PM", "5 PM"];
 const ROW = 34; // px per half hour
 const NOW = 4.6;
 
-export function ScheduleArt({ className }: { className?: string }) {
+export function ScheduleArt({ className, withMessage = true }: { className?: string; withMessage?: boolean }) {
   return (
     <div className={cn("relative select-none", className)} aria-hidden>
       <div className="rounded-[20px] border border-white/10 bg-white p-4 shadow-pop">
@@ -65,13 +65,20 @@ export function ScheduleArt({ className }: { className?: string }) {
         </div>
       </div>
 
-      <div dir="rtl" lang="ar" className="absolute -bottom-10 -start-6 w-[250px] rounded-[16px] rounded-ss-[4px] bg-[#e2f7cb] px-3.5 pt-2.5 pb-2 text-[12.5px] leading-relaxed text-[#111b21] shadow-pop sm:-start-10">
-        تذكير بموعدك في عيادة نور لطب الأسنان: فحص وتنظيف، الخميس 29 أكتوبر الساعة 4:30 م.
-        <span className="mt-1 flex items-center justify-end gap-1 text-[10.5px] text-[#667781]" dir="ltr">
-          9:02
-          <CheckCheck className="size-3.5 text-[#53bdeb]" />
-        </span>
-      </div>
+      {withMessage ? <WhatsAppBubble className="absolute -bottom-10 -start-6 w-[250px] sm:-start-10" /> : null}
+    </div>
+  );
+}
+
+/** The reminder as the patient sees it in WhatsApp. */
+export function WhatsAppBubble({ className }: { className?: string }) {
+  return (
+    <div dir="rtl" lang="ar" className={cn("rounded-[16px] rounded-ss-[4px] bg-[#e2f7cb] px-3.5 pt-2.5 pb-2 text-[12.5px] leading-relaxed text-[#111b21] shadow-pop", className)}>
+      تذكير بموعدك في عيادة نور لطب الأسنان: فحص وتنظيف، الخميس 29 أكتوبر الساعة 4:30 م.
+      <span className="mt-1 flex items-center justify-end gap-1 text-[10.5px] text-[#667781]" dir="ltr">
+        9:02
+        <CheckCheck className="size-3.5 text-[#53bdeb]" />
+      </span>
     </div>
   );
 }

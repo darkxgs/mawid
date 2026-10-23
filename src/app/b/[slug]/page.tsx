@@ -7,6 +7,7 @@ import { getBusinessBySlug, getCatalog } from "@/server/catalog";
 import { publicBusiness } from "@/server/public";
 import { BookingFlow } from "@/components/booking/booking-flow";
 import { isLocale, pick } from "@/lib/format";
+import { localDate } from "@/lib/time";
 
 export async function generateMetadata({ params }: PageProps<"/b/[slug]">): Promise<Metadata> {
   // Business details change from the dashboard, so read them per request.
@@ -40,7 +41,7 @@ async function Booking({ params, searchParams }: PageProps<"/b/[slug]">) {
   const pub = publicBusiness(business, catalog);
   const lang = isLocale(sp.lang) ? sp.lang : pub.defaultLocale;
   const service = typeof sp.service === "string" ? sp.service : undefined;
-  return <BookingFlow business={pub} initialLocale={lang} initialServiceId={service} />;
+  return <BookingFlow business={pub} today={localDate(new Date(), business.timezone)} initialLocale={lang} initialServiceId={service} />;
 }
 
 function BookingSkeleton() {

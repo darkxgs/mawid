@@ -2,7 +2,7 @@
 
 import { Check, CalendarPlus, MapPin, Phone, RotateCcw, Settings2 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type FormEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { Avatar, Button, Field, Input, Spinner, Textarea, buttonClass, cn } from "@/components/ui";
 import { copy, type Copy } from "@/lib/copy";
 import { formatDateShort, formatDuration, formatMoney, formatTime, intlTag, pick, type Locale } from "@/lib/format";
@@ -32,10 +32,13 @@ const PAGE = 14;
 
 export function BookingFlow({
   business,
+  today,
   initialLocale,
   initialServiceId,
 }: {
   business: PublicBusiness;
+  /** Today's date in the business's time zone, from the server. */
+  today: string;
   initialLocale: Locale;
   initialServiceId?: string;
 }) {
@@ -47,9 +50,8 @@ export function BookingFlow({
   const [serviceId, setServiceId] = useState<string | null>(initialService?.id ?? null);
   const [staffId, setStaffId] = useState<string | null>(null);
   const [from, setFrom] = useState<string | null>(null);
-  const [today, setToday] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
-  const [slot, setSlot] = useState<SlotPick | null>(null);
+  const [slotChoice, setSlot] = useState<SlotPick | null>(null);
   const [hold, setHold] = useState<Hold | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -61,8 +63,6 @@ export function BookingFlow({
     () => business.staff.filter((s) => (serviceId ? s.serviceIds.includes(serviceId) : false)),
     [business.staff, serviceId],
   );
-  const assignedStaffId = result?.staffId ?? hold?.staffId ?? staffId ?? (slot?.staffIds.length === 1 ? slot.staffIds[0] : null);
-  const assignedStaff = business.staff.find((s) => s.id === assignedStaffId) ?? null;
 
   const availUrl =
     serviceId && step !== "service"
@@ -75,24 +75,16 @@ export function BookingFlow({
       : null;
   const avail = useAvailability(step === "time" ? availUrl : null);
 
-  // First response tells us "today" in the business's timezone.
-  useEffect(() => {
-    if (avail.status === "ready" && !from && avail.days[0]) setToday(avail.days[0].date);
-  }, [avail.status, avail.days, from]);
-
-  // Keep a day selected as data arrives: the first one with free times.
-  useEffect(() => {
-    if (avail.status !== "ready" || !avail.days.length) return;
-    if (date && avail.days.some((d) => d.date === date)) return;
-    setDate((avail.days.find((d) => d.slots.length) ?? avail.days[0]).date);
-  }, [avail.status, avail.days, date]);
-
-  // Drop a picked slot that is no longer offered after a refresh.
-  useEffect(() => {
-    if (!slot || avail.status !== "ready") return;
-    const still = avail.days.some((d) => d.slots.some((s) => s.start === slot.start));
-    if (!still && avail.days.some((d) => d.date === date)) setSlot(null);
-  }, [avail.status, avail.days, slot, date]);
+  // The day in view: the one picked, or the first with free times on this page.
+  const dayInView =
+    date && avail.days.some((d) => d.date === date) ? date : ((avail.days.find((d) => d.slots.length) ?? avail.days[0])?.date ?? null);
+  // A picked time that a refresh no longer offers is treated as not picked.
+  const slot =
+    slotChoice && step === "time" && avail.status === "ready" && !avail.days.some((d) => d.slots.some((x) => x.start === slotChoice.start))
+      ? null
+      : slotChoice;
+  const assignedStaffId = result?.staffId ?? hold?.staffId ?? staffId ?? (slot?.staffIds.length === 1 ? slot.staffIds[0] : null);
+  const assignedStaff = business.staff.find((s) => s.id === assignedStaffId) ?? null;
 
   const go = useCallback((s: Step) => {
     setStep(s);
@@ -170,10 +162,10 @@ export function BookingFlow({
   }
 
   const nextFrom = avail.days.length ? addDays(avail.days[avail.days.length - 1].date, 1) : null;
-  const canNext = !!(today && nextFrom && daysBetween(today, nextFrom) < business.maxAdvanceDays);
-  const canPrev = !!(today && from && from > today);
+  const canNext = !!(nextFrom && daysBetween(today, nextFrom) < business.maxAdvanceDays);
+  const canPrev = !!(from && from > today);
 
-  const selectedDay = avail.days.find((d) => d.date === date) ?? null;
+  const selectedDay = avail.days.find((d) => d.date === dayInView) ?? null;
   const nextOpenDay = selectedDay && !selectedDay.slots.length ? avail.days.find((d) => d.date > selectedDay.date && d.slots.length) : null;
 
   const ticket: TicketProps = {
@@ -256,14 +248,14 @@ export function BookingFlow({
                 <div className="mt-7">
                   <DayStrip
                     days={avail.days}
-                    selected={date}
+                    selected={dayInView}
                     loading={avail.status === "loading"}
                     locale={locale}
                     onSelect={(d) => {
                       setDate(d);
                       setSlot(null);
                     }}
-                    onPrev={canPrev ? () => setFrom(from && today && daysBetween(today, addDays(from, -PAGE)) > 0 ? addDays(from, -PAGE) : null) : undefined}
+                    onPrev={canPrev ? () => setFrom(from && daysBetween(today, addDays(from, -PAGE)) > 0 ? addDays(from, -PAGE) : null) : undefined}
                     onNext={canNext ? () => setFrom(nextFrom) : undefined}
                   />
                 </div>
@@ -324,7 +316,6 @@ export function BookingFlow({
             {step === "details" && service && hold && slot ? (
               <DetailsStep
                 business={business}
-                locale={locale}
                 t={t}
                 hold={hold}
                 ticket={ticket}
@@ -556,7 +547,6 @@ function StaffChip({
 
 function DetailsStep({
   business,
-  locale,
   t,
   hold,
   ticket,
@@ -565,7 +555,6 @@ function DetailsStep({
   onDone,
 }: {
   business: PublicBusiness;
-  locale: Locale;
   t: Copy;
   hold: Hold;
   ticket: TicketProps;

@@ -7,6 +7,7 @@ import { Avatar, Button, Spinner } from "@/components/ui";
 import { formatDateLong, formatDuration, formatMoney, formatTime, enDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import type { DashBooking } from "@/server/dashboard";
+import { useNow } from "@/components/booking/shared";
 import { Overlay, SOURCE, StatusBadge } from "./common";
 
 type Msg = { id: string; kind: string; channel: string; status: string; createdAt: string };
@@ -37,28 +38,40 @@ export function BookingSheet({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [messages, setMessages] = useState<Msg[] | null>(null);
   const [current, setCurrent] = useState<SheetBooking | null>(booking);
+  const [shown, setShown] = useState<SheetBooking | null>(booking);
+  // Fetched trails, by booking id (bookings from the day view already carry theirs).
+  const [fetched, setFetched] = useState<Record<string, Msg[]>>({});
+  const now = useNow(true, 30_000);
+
+  // A different booking was opened: reset per-booking UI state while rendering,
+  // and keep the last one around while the sheet animates closed.
+  if (booking !== shown) {
+    setShown(booking);
+    if (booking) {
+      setCurrent(booking);
+      setError(null);
+      setConfirmCancel(false);
+    }
+  }
 
   useEffect(() => {
-    if (booking) setCurrent(booking);
-    setError(null);
-    setConfirmCancel(false);
-    setMessages(booking?.messages ?? null);
-    if (booking && !booking.messages) {
-      let live = true;
-      bookingMessages(booking.id).then((m) => live && setMessages(m)).catch(() => {});
-      return () => {
-        live = false;
-      };
-    }
-  }, [booking]);
+    if (!booking || booking.messages || fetched[booking.id]) return;
+    let live = true;
+    bookingMessages(booking.id)
+      .then((m) => live && setFetched((f) => ({ ...f, [booking.id]: m })))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [booking, fetched]);
 
   const b = current;
+  const messages: Msg[] | null = b ? (b.messages ?? fetched[b.id] ?? null) : null;
   const member = b ? team.find((t) => t.id === b.staffId) : null;
   const start_ = b ? new Date(b.startsAt) : null;
-  const ended = b ? new Date(b.endsAt).getTime() < Date.now() : false;
-  const started = b ? new Date(b.startsAt).getTime() <= Date.now() : false;
+  const ended = !!b && now > 0 && new Date(b.endsAt).getTime() < now;
+  const started = !!b && now > 0 && new Date(b.startsAt).getTime() <= now;
 
   function act(status: "confirmed" | "completed" | "cancelled" | "no_show") {
     if (!b) return;

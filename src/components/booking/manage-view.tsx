@@ -2,7 +2,7 @@
 
 import { CalendarClock, Phone, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, Spinner, buttonClass, cn } from "@/components/ui";
 import { copy } from "@/lib/copy";
 import { formatDateShort, formatTime, type Locale } from "@/lib/format";
@@ -27,11 +27,13 @@ const PAGE = 14;
 
 export function ManageView({
   token,
+  today,
   business,
   booking: initial,
   initialLocale,
 }: {
   token: string;
+  today: string;
   business: PublicBusiness;
   booking: ManagedBooking;
   initialLocale: Locale;
@@ -45,7 +47,6 @@ export function ManageView({
 
   // Rescheduling state
   const [from, setFrom] = useState<string | null>(null);
-  const [today, setToday] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
   const [slot, setSlot] = useState<SlotPick | null>(null);
 
@@ -57,15 +58,8 @@ export function ManageView({
     mode === "move" ? `/api/m/${token}/availability?${new URLSearchParams({ days: String(PAGE), ...(from ? { from } : {}) })}` : null,
   );
 
-  useEffect(() => {
-    if (avail.status === "ready" && !from && avail.days[0]) setToday(avail.days[0].date);
-  }, [avail.status, avail.days, from]);
-
-  useEffect(() => {
-    if (avail.status !== "ready" || !avail.days.length) return;
-    if (date && avail.days.some((d) => d.date === date)) return;
-    setDate((avail.days.find((d) => d.slots.length) ?? avail.days[0]).date);
-  }, [avail.status, avail.days, date]);
+  const dayInView =
+    date && avail.days.some((d) => d.date === date) ? date : ((avail.days.find((d) => d.slots.length) ?? avail.days[0])?.date ?? null);
 
   function switchLocale() {
     const next: Locale = locale === "ar" ? "en" : "ar";
@@ -116,10 +110,10 @@ export function ManageView({
     setMode("view");
   }
 
-  const selectedDay = avail.days.find((d) => d.date === date) ?? null;
+  const selectedDay = avail.days.find((d) => d.date === dayInView) ?? null;
   const nextFrom = avail.days.length ? addDays(avail.days[avail.days.length - 1].date, 1) : null;
-  const canNext = !!(today && nextFrom && daysBetween(today, nextFrom) < business.maxAdvanceDays);
-  const canPrev = !!(today && from && from > today);
+  const canNext = !!(nextFrom && daysBetween(today, nextFrom) < business.maxAdvanceDays);
+  const canPrev = !!(from && from > today);
   const active = booking.status === "confirmed" && !booking.past;
 
   return (
@@ -218,14 +212,14 @@ export function ManageView({
               <div className="mt-5">
                 <DayStrip
                   days={avail.days}
-                  selected={date}
+                  selected={dayInView}
                   loading={avail.status === "loading"}
                   locale={locale}
                   onSelect={(d) => {
                     setDate(d);
                     setSlot(null);
                   }}
-                  onPrev={canPrev ? () => setFrom(from && today && daysBetween(today, addDays(from, -PAGE)) > 0 ? addDays(from, -PAGE) : null) : undefined}
+                  onPrev={canPrev ? () => setFrom(from && daysBetween(today, addDays(from, -PAGE)) > 0 ? addDays(from, -PAGE) : null) : undefined}
                   onNext={canNext ? () => setFrom(nextFrom) : undefined}
                 />
               </div>

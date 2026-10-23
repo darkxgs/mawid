@@ -30,33 +30,38 @@ export function NewBookingDialog({
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const [staffId, setStaffId] = useState("");
   const [date, setDate] = useState(defaultDate);
-  const [slot, setSlot] = useState("");
-  const [day, setDay] = useState<Day | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [prevDefault, setPrevDefault] = useState(defaultDate);
+  const [slotChoice, setSlot] = useState("");
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(createBooking, null);
+  const [result, setResult] = useState<{ key: string; day: Day | null } | null>(null);
 
-  useEffect(() => setDate(defaultDate), [defaultDate]);
+  // The schedule moved to another day: start the form on that day.
+  if (defaultDate !== prevDefault) {
+    setPrevDefault(defaultDate);
+    setDate(defaultDate);
+  }
+
   useEffect(() => {
     if (state?.ok) onClose();
   }, [state, onClose]);
 
   const eligible = useMemo(() => team.filter((m) => m.serviceIds.includes(serviceId)), [team, serviceId]);
 
+  // Free times for the current choices; a failed attempt (time just taken) refetches.
+  const query = open && serviceId && date ? new URLSearchParams({ service: serviceId, date, ...(staffId ? { staff: staffId } : {}) }).toString() : null;
+  const key = query ? `${query}#${state && !state.ok ? state.error : ""}` : null;
   useEffect(() => {
-    if (!open || !serviceId || !date) return;
+    if (!key || !query) return;
     const ctrl = new AbortController();
-    setLoading(true);
-    setSlot("");
-    fetch(`/api/dashboard/availability?${new URLSearchParams({ service: serviceId, date, ...(staffId ? { staff: staffId } : {}) })}`, {
-      signal: ctrl.signal,
-      cache: "no-store",
-    })
+    fetch(`/api/dashboard/availability?${query}`, { signal: ctrl.signal, cache: "no-store" })
       .then((r) => r.json())
-      .then((b: { days?: Day[] }) => setDay(b.days?.[0] ?? null))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then((b: { days?: Day[] }) => setResult({ key, day: b.days?.[0] ?? null }))
+      .catch(() => {});
     return () => ctrl.abort();
-  }, [open, serviceId, staffId, date, state]);
+  }, [key, query]);
+  const loading = !!key && result?.key !== key;
+  const day = result?.key === key ? result.day : null;
+  const slot = slotChoice && day?.slots.some((s) => s.start === slotChoice) ? slotChoice : "";
 
   const f = state && !state.ok ? state.fields ?? {} : {};
   const svc = services.find((s) => s.id === serviceId);
