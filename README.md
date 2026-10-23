@@ -81,8 +81,10 @@ npm run lint
 ## Deploy
 
 1. Import the repo on Vercel.
-2. Add a Postgres database (Vercel Storage, Supabase or Neon). `DATABASE_URL` or `POSTGRES_URL` is picked up automatically; migrations run during the build with an advisory lock.
+2. Add a Postgres database (Vercel Storage, Neon or Supabase). `DATABASE_URL` or `POSTGRES_URL` is picked up automatically. Migrations run during the build over the direct connection (`DATABASE_URL_UNPOOLED` or `POSTGRES_URL_NON_POOLING`) with an advisory lock; the app itself uses the pooled one.
 3. Set `AUTH_SECRET` (random, 32+ characters) and `CRON_SECRET`.
+
+Two crons come with it (`vercel.json`): the daily reminder sweep, and a nightly reset of the demo clinic at midnight Dubai time, so whatever visitors change in the demo is gone by morning. Accounts people sign up for are never touched.
 
 Optional: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE` for real WhatsApp delivery; `RESEND_API_KEY` and `EMAIL_FROM` for email.
 
@@ -96,7 +98,7 @@ src/
     b/[slug]/            public booking page
     m/[token]/           patient's manage link
     dashboard/           the front desk (Today, Bookings, Assistant, ...)
-    api/                 booking, availability and cron routes
+    api/                 booking, availability and cron routes (reminders, demo reset)
   components/booking/    day strip, slot grid, ticket, booking flow
   components/dashboard/  timeline, booking sheet, insights charts, ...
   db/                    schema, SQL migrations, demo seed

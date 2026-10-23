@@ -2,13 +2,13 @@
 // so schema changes apply once per deploy instead of on every cold start.
 import "dotenv/config";
 import postgres from "postgres";
-import { databaseUrl, runMigrations } from "../src/db/migrate";
+import { databaseUrl, directDatabaseUrl, runMigrations } from "../src/db/migrate";
 
 async function main() {
   const url = databaseUrl();
   if (!url) {
     if (process.env.VERCEL) {
-      console.warn("[migrate] No database configured yet; skipping. Connect Supabase in Vercel → Storage.");
+      console.warn("[migrate] No database configured yet; skipping. Connect Postgres (Neon or Supabase) in Vercel → Storage.");
       return;
     }
     const { PGlite } = await import("@electric-sql/pglite");
@@ -21,9 +21,9 @@ async function main() {
     console.log("[migrate] local PGlite database is up to date");
     return;
   }
-  // Prefer the direct (non-pooled) connection for DDL when Supabase provides one.
-  const direct = process.env.POSTGRES_URL_NON_POOLING || url;
-  const client = postgres(direct, { prepare: false, max: 1 });
+  // DDL and the advisory lock need a real session, so prefer the direct
+  // (non-pooled) connection when the provider gives one (Neon, Supabase).
+  const client = postgres(directDatabaseUrl() ?? url, { prepare: false, max: 1 });
   try {
     await client`SELECT pg_advisory_lock(7272001)`;
     await runMigrations({ kind: "postgres", client });

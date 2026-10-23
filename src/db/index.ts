@@ -19,7 +19,7 @@ async function connect(): Promise<Connection> {
   const url = databaseUrl();
   if (url) {
     // prepare:false keeps us compatible with transaction-mode poolers
-    // (Supabase pgbouncer on :6543).
+    // (Neon's -pooler host, Supabase on :6543).
     const client = postgres(url, { prepare: false, max: 5, idle_timeout: 20 });
     // Production schema changes run once per deploy, in the build step
     // (scripts/migrate.ts), so cold starts never race each other.

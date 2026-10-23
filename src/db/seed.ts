@@ -112,6 +112,19 @@ export async function seedDemo(t: MigrationTarget, now = new Date()) {
   await topUpDemoBookings(t, now);
 }
 
+/**
+ * Puts the demo clinic back the way it ships: settings, team, services,
+ * customers and bookings. Visitors can change anything in the demo, so this
+ * runs every night. Signed-up accounts are never touched.
+ */
+export async function resetDemo(t: MigrationTarget, now = new Date()) {
+  // Bookings hold RESTRICT references to staff and services, so they go first.
+  await rawQuery(t, `DELETE FROM notifications WHERE business_id = $1`, [DEMO.businessId]);
+  await rawQuery(t, `DELETE FROM bookings WHERE business_id = $1`, [DEMO.businessId]);
+  await rawQuery(t, `DELETE FROM businesses WHERE id = $1`, [DEMO.businessId]);
+  await seedDemo(t, now);
+}
+
 async function seedStatic(t: MigrationTarget) {
   const hash = await bcrypt.hash(DEMO.password, 10);
   await rawQuery(t, `INSERT INTO users (id, email, name, password_hash) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`, [

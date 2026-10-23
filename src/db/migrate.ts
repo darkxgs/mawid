@@ -10,13 +10,31 @@ export type MigrationTarget =
   | { kind: "postgres"; client: Sql }
   | { kind: "pglite"; client: PGlite };
 
+// libpq and Prisma options that postgres.js would otherwise send to the server
+// as startup parameters ("unrecognized configuration parameter").
+const CLIENT_ONLY_PARAMS = ["channel_binding", "pgbouncer", "schema", "connection_limit", "pool_timeout"];
+
+/** Removes connection-string options postgres.js doesn't understand. */
+export function cleanPgUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    for (const k of CLIENT_ONLY_PARAMS) u.searchParams.delete(k);
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** The pooled connection string (Neon, Supabase and Vercel Postgres names). */
 export function databaseUrl(): string | undefined {
-  return (
-    process.env.DATABASE_URL ||
-    process.env.POSTGRES_URL ||
-    process.env.POSTGRES_PRISMA_URL ||
-    undefined
-  );
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
+  return url ? cleanPgUrl(url) : undefined;
+}
+
+/** A direct (non-pooled) connection for migrations, falling back to the pooled one. */
+export function directDatabaseUrl(): string | undefined {
+  const url = process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL_NON_POOLING;
+  return url ? cleanPgUrl(url) : databaseUrl();
 }
 
 let migrated: Promise<void> | undefined;
