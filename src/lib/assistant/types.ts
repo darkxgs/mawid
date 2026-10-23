@@ -30,7 +30,7 @@ export type BookStep = {
  * `understand()`; buttons in a reply carry them directly.
  */
 export type Step =
-  | { t: "text"; text: string }
+  | { t: "text"; text: string; expect?: { then?: "cancel" | "move"; date?: string; part?: DayPart } }
   | { t: "help" }
   | { t: "noop" }
   | { t: "day"; date: string; staffId?: string; part?: DayPart }

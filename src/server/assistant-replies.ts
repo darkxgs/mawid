@@ -3,7 +3,7 @@ import "server-only";
 // short sentence, a card to scan and the next things worth tapping. Nothing
 // is generated: the wording is written here, in English and Arabic.
 import { PART_WINDOW, type Block, type BookStep, type Chip, type DayPart, type Lang, type Reply, type Row, type StatsRange, type Step } from "@/lib/assistant/types";
-import { understand } from "@/lib/assistant/understand";
+import { understand, understandReply } from "@/lib/assistant/understand";
 import { enDate, formatDuration, formatMoney, pick } from "@/lib/format";
 import { currencyCountry, formatPhone, normalizePhone } from "@/lib/phone";
 import { addDays, localDate, localMinutes, minutesToHHMM, weekdayOf } from "@/lib/time";
@@ -109,7 +109,8 @@ export async function respond(ctx: AssistantContext, step: Step, l: Lang): Promi
   const tz = ctx.business.timezone;
   const c: C = { ctx, ops: assistantOps(ctx), l, today: localDate(ctx.now, tz), nowMin: localMinutes(ctx.now, tz) };
   if (step.t === "text") {
-    const s = understand(step.text, { today: c.today, services: ctx.catalog.services, staff: ctx.catalog.staff });
+    const uc = { today: c.today, services: ctx.catalog.services, staff: ctx.catalog.staff };
+    const s = step.expect ? understandReply(step.text, uc, step.expect) : understand(step.text, uc);
     return s ? answer(c, s) : fallback(c);
   }
   return answer(c, step);

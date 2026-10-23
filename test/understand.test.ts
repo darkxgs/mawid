@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { customerQuery, findTime, understand } from "@/lib/assistant/understand";
+import { customerQuery, findTime, understand, understandReply } from "@/lib/assistant/understand";
 
 const ctx = {
   today: "2026-10-23", // a Friday
@@ -71,5 +71,12 @@ describe("understanding front-desk questions", () => {
     expect(findTime("الساعة ١١ ص")).toBe("11:00");
     expect(findTime("050 123 4567")).toBeUndefined();
     expect(customerQuery("cancel the booking for 4567")).toBe("4567");
+  });
+
+  it("reads an answer to 'whose appointment?' as a name unless it is a new request", () => {
+    const pending = { then: "cancel" as const };
+    expect(understandReply("Omar", ctx, pending)).toEqual({ t: "customer", query: "Omar", then: "cancel" });
+    expect(understandReply("050 765 4321", ctx, pending)).toEqual({ t: "customer", query: "0507654321", then: "cancel" });
+    expect(understandReply("Book a whitening appointment", ctx, pending)).toEqual({ t: "book", serviceId: "whitening" });
   });
 });

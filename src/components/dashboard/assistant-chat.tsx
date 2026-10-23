@@ -70,7 +70,7 @@ export function AssistantChat({ businessName, staffName, serviceName }: { busine
     const text = input.trim();
     if (!text || pending) return;
     const lang: Lang = hasArabic(text) ? "ar" : expect ? (latest?.reply.lang ?? "en") : "en";
-    const step: Step = expect ? { t: "customer", query: text, then: expect.then, date: expect.date, part: expect.part } : { t: "text", text };
+    const step: Step = expect ? { t: "text", text, expect: { then: expect.then, date: expect.date, part: expect.part } } : { t: "text", text };
     setInput("");
     void run(step, text, lang);
     field.current?.focus();

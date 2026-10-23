@@ -285,3 +285,20 @@ export function understand(raw: string, ctx: UnderstandContext): Step | null {
 function strip<T extends Step>(o: T): T {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 }
+
+const INTENT_WORDS = [...HELP, ...CANCEL, ...MOVE, ...STATS, ...HOW_MANY, ...BOOK, ...FREE, ...DAY];
+
+/**
+ * After "Whose appointment?", a reply is usually a name or a number, but it
+ * can also be a new question. Only an explicit request word switches topic;
+ * a bare "Omar" is a customer, not the dentist of the same name.
+ */
+export function understandReply(raw: string, ctx: UnderstandContext, expect: { then?: "cancel" | "move"; date?: string; part?: DayPart }): Step {
+  if (new Said(raw).has(INTENT_WORDS)) {
+    const s = understand(raw, ctx);
+    if (s) return s;
+  }
+  const digits = asciiDigits(raw).replace(/\D/g, "");
+  const query = digits.length >= 4 ? digits : raw.trim().slice(0, 80);
+  return strip({ t: "customer", query, then: expect.then, date: expect.date, part: expect.part });
+}

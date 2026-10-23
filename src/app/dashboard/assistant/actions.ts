@@ -18,7 +18,11 @@ const lang = z.enum(["en", "ar"]);
 // Steps arrive from the browser, so they are checked like any other input.
 // Every lookup and write below is also scoped to the signed-in business.
 const StepSchema = z.discriminatedUnion("t", [
-  z.object({ t: z.literal("text"), text: z.string().trim().min(1).max(400) }),
+  z.object({
+    t: z.literal("text"),
+    text: z.string().trim().min(1).max(400),
+    expect: z.object({ then: z.enum(["cancel", "move"]).optional(), date: date.optional(), part: part.optional() }).optional(),
+  }),
   z.object({ t: z.literal("help") }),
   z.object({ t: z.literal("noop") }),
   z.object({ t: z.literal("day"), date, staffId: id.optional(), part: part.optional() }),
