@@ -5,7 +5,7 @@ Online booking, WhatsApp reminders and a live schedule for clinics, salons and s
 **Live demo:** https://mawid-bay.vercel.app
 Open the demo clinic from the home page (no sign-up), or book a visit as a patient at `/b/noor-dental` and watch it land on the schedule.
 
-![Mawid landing page](docs/screenshots/landing.png)
+![Mawid landing page](docs/screenshots/landing.jpg)
 
 ## What it does
 
@@ -21,6 +21,14 @@ Open the demo clinic from the home page (no sign-up), or book a visit as a patie
 - **Messages:** the outbox of everything sent to patients, in their language.
 - **Insights:** appointments per day, busiest hours, no-show rate, where bookings came from, how full each person's week was.
 - **Services, Team & hours, Settings:** bilingual services, shifts and breaks, time off, booking rules, the booking link with a QR code.
+
+## Screens
+
+| Booking page (Arabic, RTL) | Today, the front desk |
+|---|---|
+| ![Booking page](docs/screenshots/booking-desktop-ar.jpg) | ![Today](docs/screenshots/dashboard-today.png) |
+| **Insights** | **A booking, with its message trail** |
+| ![Insights](docs/screenshots/dashboard-insights.png) | ![Booking sheet](docs/screenshots/dashboard-booking-sheet.png) |
 
 ## How it's built
 

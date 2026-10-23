@@ -52,7 +52,7 @@ export function SlotGrid({
                     aria-checked={isSel}
                     onClick={() => onSelect(s)}
                     className={cn(
-                      "tnum h-11 rounded-control border text-[15px] font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-[0.96] active:duration-75",
+                      "h-11 rounded-control border text-[15px] font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-[0.96] active:duration-75",
                       isSel
                         ? "border-saffron bg-saffron text-ink shadow-[0_6px_16px_-8px_rgb(184_116_18/0.7)]"
                         : "border-mist bg-card text-ink hover:border-sea hover:text-sea-deep",
