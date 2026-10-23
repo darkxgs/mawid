@@ -164,7 +164,10 @@ async function seedStatic(t: MigrationTarget) {
 /** Fill every empty day from four months ago to 12 days ahead with bookings. */
 export async function topUpDemoBookings(t: MigrationTarget, now = new Date()) {
   const today = localDate(now, DEMO.tz);
-  const from = addDays(today, -120);
+  // A temporary database (Vercel without Postgres) is seeded on every cold
+  // start, so it gets a shorter history to keep the first request quick.
+  const ephemeral = !!process.env.VERCEL && !(process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL);
+  const from = addDays(today, ephemeral ? -35 : -120);
   const to = addDays(today, 12);
   const rows = await rawQuery<{ d: string }>(
     t,

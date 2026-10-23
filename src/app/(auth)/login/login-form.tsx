@@ -16,7 +16,7 @@ export function LoginForm() {
         <DemoButton />
       </form>
       <p className="mt-3 text-[13px] leading-relaxed text-muted">
-        Opens Noor Dental Clinic, a sample clinic with a month of real-looking bookings. Changes you make there are visible to other visitors.
+        Opens Noor Dental Clinic, a sample clinic with months of bookings already in it. Anything you change there is visible to other visitors.
       </p>
 
       <div className="my-8 flex items-center gap-3 text-[13px] text-faint">
