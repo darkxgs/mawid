@@ -59,8 +59,8 @@ async function sendEmail(to: string, subject: string, body: string): Promise<{ o
 
 const SUBJECTS: Record<NotificationKind, Record<Locale, string>> = {
   confirmation: { en: "Your booking is confirmed", ar: "تم تأكيد حجزك" },
-  reminder_24h: { en: "Your appointment is tomorrow", ar: "موعدك بكرة" },
-  reminder_2h: { en: "See you soon", ar: "نشوفك قريب" },
+  reminder_24h: { en: "Appointment reminder", ar: "تذكير بموعدك" },
+  reminder_2h: { en: "See you today", ar: "نشوفك النهارده" },
   cancellation: { en: "Your appointment was cancelled", ar: "تم إلغاء موعدك" },
   reschedule: { en: "Your appointment has moved", ar: "تم تغيير موعدك" },
 };

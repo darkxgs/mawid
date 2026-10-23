@@ -93,11 +93,11 @@ export async function getAvailability(
   db: DB,
   business: Business,
   catalog: Catalog,
-  q: { serviceId: string; staffId?: string | null; from: DateStr; days: number; now: Date },
+  q: { serviceId: string; staffId?: string | null; from: DateStr; days: number; now: Date; excludeBookingId?: string },
 ) {
   const service = catalog.services.find((s) => s.id === q.serviceId);
   if (!service) throw new BookingError("not_found", "Unknown service");
-  const staff = await staffInputs(db, business, catalog, service.id, q.staffId, q.from, q.days, q.now);
+  const staff = await staffInputs(db, business, catalog, service.id, q.staffId, q.from, q.days, q.now, q.excludeBookingId);
   return computeRange({ from: q.from, days: q.days, rules: rulesOf(business), service, staff, now: q.now });
 }
 

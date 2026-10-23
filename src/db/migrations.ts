@@ -166,4 +166,18 @@ CREATE TABLE notifications (
 CREATE INDEX notifications_business_idx ON notifications(business_id, created_at DESC);
 `,
   },
+  {
+    name: "0002_jobs",
+    sql: /* sql */ `
+-- Background work (reminders, housekeeping) runs from a daily Vercel cron and
+-- opportunistically after requests. This row makes sure only one run happens
+-- per interval no matter how many instances try.
+CREATE TABLE app_jobs (
+  key     text PRIMARY KEY,
+  ran_at  timestamptz NOT NULL
+);
+CREATE INDEX bookings_reminder_idx ON bookings(starts_at)
+  WHERE status = 'confirmed' AND (reminder_24_sent_at IS NULL OR reminder_2_sent_at IS NULL);
+`,
+  },
 ];

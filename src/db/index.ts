@@ -3,16 +3,19 @@ import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import postgres from "postgres";
 import * as schema from "./schema";
-import { databaseUrl, ensureMigrated } from "./migrate";
+import { databaseUrl, ensureMigrated, type MigrationTarget } from "./migrate";
 
 export { databaseUrl };
 
 export type DB = PgDatabase<PgQueryResultHKT, typeof schema>;
 
-type GlobalDb = { __mawidDb?: Promise<DB> };
-const g = globalThis as unknown as GlobalDb;
+/** The Drizzle handle plus the raw client underneath it (for raw SQL helpers). */
+export type Connection = { db: DB; raw: MigrationTarget };
 
-async function connect(): Promise<DB> {
+type GlobalConn = { __mawidConn?: Promise<Connection> };
+const g = globalThis as unknown as GlobalConn;
+
+async function connect(): Promise<Connection> {
   const url = databaseUrl();
   if (url) {
     // prepare:false keeps us compatible with transaction-mode poolers
@@ -20,7 +23,7 @@ async function connect(): Promise<DB> {
     const client = postgres(url, { prepare: false, max: 5, idle_timeout: 20 });
     // Production schema changes run once per deploy, in the build step
     // (scripts/migrate.ts), so cold starts never race each other.
-    return drizzlePg(client, { schema }) as unknown as DB;
+    return { db: drizzlePg(client, { schema }) as unknown as DB, raw: { kind: "postgres", client } };
   }
   // Local development without Postgres: an embedded Postgres (PGlite) on disk.
   const { PGlite } = await import("@electric-sql/pglite");
@@ -28,21 +31,24 @@ async function connect(): Promise<DB> {
   const { drizzle: drizzlePglite } = await import("drizzle-orm/pglite");
   const dir = process.env.PGLITE_DIR ?? ".data/pglite";
   (await import("node:fs")).mkdirSync(dir, { recursive: true });
-  const client = await PGlite.create(dir, {
-    extensions: { btree_gist },
-  });
-  await ensureMigrated({ kind: "pglite", client });
-  return drizzlePglite(client, { schema }) as unknown as DB;
+  const client = await PGlite.create(dir, { extensions: { btree_gist } });
+  const raw: MigrationTarget = { kind: "pglite", client };
+  await ensureMigrated(raw);
+  return { db: drizzlePglite(client, { schema }) as unknown as DB, raw };
 }
 
-export function getDb(): Promise<DB> {
-  if (!g.__mawidDb) {
-    g.__mawidDb = connect().catch((err) => {
-      g.__mawidDb = undefined;
+export function getConnection(): Promise<Connection> {
+  if (!g.__mawidConn) {
+    g.__mawidConn = connect().catch((err) => {
+      g.__mawidConn = undefined;
       throw err;
     });
   }
-  return g.__mawidDb;
+  return g.__mawidConn;
+}
+
+export async function getDb(): Promise<DB> {
+  return (await getConnection()).db;
 }
 
 export { schema };

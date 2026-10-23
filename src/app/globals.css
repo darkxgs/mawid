@@ -23,8 +23,8 @@
   --color-rose: #b9473d;
   --color-rose-soft: #f8e5e2;
 
-  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-readex), var(--font-plex), ui-sans-serif, sans-serif;
+  --font-sans: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Readex Pro Variable", "IBM Plex Sans Arabic", ui-sans-serif, sans-serif;
 
   --radius-panel: 18px;
   --radius-control: 10px;

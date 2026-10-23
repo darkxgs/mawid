@@ -31,9 +31,9 @@ export function renderMessage(kind: NotificationKind, locale: Locale, d: Message
           .filter(Boolean)
           .join("\n");
       case "reminder_24h":
-        return `تذكير: موعدك في ${d.businessName} بكرة ${date} الساعة ${time} (${d.serviceName}).\nلو محتاج تغيّر الميعاد: ${d.manageUrl}`;
+        return `تذكير بموعدك في ${d.businessName}: ${d.serviceName}، ${date} الساعة ${time}.\nلو محتاج تغيّر الميعاد: ${d.manageUrl}`;
       case "reminder_2h":
-        return `موعدك في ${d.businessName} بعد ساعتين، الساعة ${time}. نشوفك قريب 👋`;
+        return `موعدك في ${d.businessName} النهارده الساعة ${time}. نشوفك قريب 👋`;
       case "cancellation":
         return `تم إلغاء موعدك في ${d.businessName} (${date} الساعة ${time}).\nتقدر تحجز ميعاد جديد في أي وقت.`;
       case "reschedule":
@@ -52,9 +52,9 @@ export function renderMessage(kind: NotificationKind, locale: Locale, d: Message
         .filter(Boolean)
         .join("\n");
     case "reminder_24h":
-      return `Reminder: your ${d.serviceName} at ${d.businessName} is tomorrow, ${date} at ${time}.\nNeed to move it? ${d.manageUrl}`;
+      return `Reminder: your ${d.serviceName} at ${d.businessName} is on ${date} at ${time}.\nNeed to move it? ${d.manageUrl}`;
     case "reminder_2h":
-      return `See you soon: your appointment at ${d.businessName} starts at ${time}, in about two hours.`;
+      return `See you soon: your appointment at ${d.businessName} is today at ${time}.`;
     case "cancellation":
       return `Your appointment at ${d.businessName} on ${date} at ${time} has been cancelled. You can book a new time anytime.`;
     case "reschedule":
