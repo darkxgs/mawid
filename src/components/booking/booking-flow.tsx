@@ -302,7 +302,7 @@ export function BookingFlow({
                   ) : null}
                 </div>
 
-                <div className="sticky bottom-0 z-10 -mx-4 mt-8 border-t border-mist bg-paper/92 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-b-panel sm:px-0 lg:border-0 lg:bg-transparent lg:backdrop-blur-none">
+                <div className="sticky bottom-0 z-10 -mx-4 mt-8 border-t border-mist glass px-4 py-3 sm:mx-0 sm:rounded-b-panel sm:px-0 lg:border-0 lg:bg-transparent lg:backdrop-blur-none">
                   <div className="flex items-center gap-4">
                     <div className="min-w-0 flex-1 lg:hidden">
                       <p className="truncate text-[13px] text-muted">{pick(locale, service.name, service.nameAr)}</p>
@@ -578,6 +578,30 @@ function DetailsStep({
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
+  // The field shows the country code, so a bare local number is the norm.
+  const toPhone = (raw: string) => {
+    const v = raw.trim();
+    if (!v) return null;
+    const international = v.startsWith("+") || v.startsWith("00");
+    return normalizePhone(international ? v : `0${v.replace(/^0+/, "")}`, country);
+  };
+  const check = (field: string, value: string): string | undefined => {
+    const v = value.trim();
+    if (field === "name") return v.length < 2 ? t.errors.name : undefined;
+    if (field === "phone") return toPhone(v) ? undefined : t.errors.phone;
+    if (field === "email") return v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? t.errors.email : undefined;
+  };
+  // Validate when someone leaves a field, and clear the message as soon as it's fixed.
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.currentTarget;
+    if (!value.trim() && name !== "email") return;
+    setErrors((prev) => ({ ...prev, [name]: check(name, value) ?? "" }));
+  };
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.currentTarget;
+    if (errors[name] && !check(name, value)) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -586,12 +610,11 @@ function DetailsStep({
     const email = String(fd.get("email") ?? "").trim();
     const notes = String(fd.get("notes") ?? "").trim();
     const next: Record<string, string> = {};
-    if (name.length < 2) next.name = t.errors.name;
-    // The field shows the country code, so a bare local number is the norm.
-    const international = phoneRaw.startsWith("+") || phoneRaw.startsWith("00");
-    const phone = phoneRaw ? normalizePhone(international ? phoneRaw : `0${phoneRaw.replace(/^0+/, "")}`, country) : null;
-    if (!phone) next.phone = t.errors.phone;
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = t.errors.email;
+    for (const [k, v] of [["name", name], ["phone", phoneRaw], ["email", email]] as const) {
+      const msg = check(k, v);
+      if (msg) next[k] = msg;
+    }
+    const phone = toPhone(phoneRaw);
     setErrors(next);
     if (Object.keys(next).length) {
       e.currentTarget.querySelector<HTMLElement>(`[name="${Object.keys(next)[0]}"]`)?.focus();
@@ -623,7 +646,7 @@ function DetailsStep({
       </h1>
       <form onSubmit={submit} noValidate className="mt-6 grid max-w-xl gap-5">
         <Field label={t.name} htmlFor="f-name" error={errors.name}>
-          <Input id="f-name" name="name" autoComplete="name" placeholder={t.namePh} aria-invalid={!!errors.name} required />
+          <Input id="f-name" name="name" autoComplete="name" placeholder={t.namePh} aria-invalid={!!errors.name} onBlur={onBlur} onChange={onChange} required />
         </Field>
         <Field label={t.phone} htmlFor="f-phone" hint={t.phoneHint} error={errors.phone}>
           <div className="relative" dir="ltr">
@@ -638,6 +661,8 @@ function DetailsStep({
               autoComplete="tel-national"
               placeholder="50 123 4567"
               aria-invalid={!!errors.phone}
+              onBlur={onBlur}
+              onChange={onChange}
               className="tnum ps-[4.25rem]"
               required
             />
@@ -648,7 +673,7 @@ function DetailsStep({
           htmlFor="f-email"
           error={errors.email}
         >
-          <Input id="f-email" name="email" type="email" autoComplete="email" dir="ltr" aria-invalid={!!errors.email} className="rtl:text-right" />
+          <Input id="f-email" name="email" type="email" autoComplete="email" dir="ltr" aria-invalid={!!errors.email} onBlur={onBlur} onChange={onChange} className="rtl:text-right" />
         </Field>
         <Field label={`${t.notes} (${t.optional})`} htmlFor="f-notes">
           <Textarea id="f-notes" name="notes" placeholder={t.notesPh} maxLength={500} />

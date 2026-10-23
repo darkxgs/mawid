@@ -120,7 +120,7 @@ export function AssistantChat({ businessName }: { businessName: string }) {
           e.preventDefault();
           send(input);
         }}
-        className="border-t border-mist bg-paper/85 px-4 py-3 backdrop-blur-md sm:px-8"
+        className="border-t border-mist glass px-4 py-3 sm:px-8"
       >
         <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[16px] border border-mist bg-card p-2 focus-within:border-sea focus-within:ring-4 focus-within:ring-sea/10">
           <textarea
@@ -137,7 +137,7 @@ export function AssistantChat({ businessName }: { businessName: string }) {
             dir="auto"
             placeholder="Ask or tell the assistant…"
             aria-label="Message"
-            className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 placeholder:text-faint focus:outline-none [field-sizing:content]"
+            className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 placeholder:text-faint focus:outline-none focus-visible:outline-none [field-sizing:content]"
           />
           {busy ? (
             <button type="button" onClick={() => stop()} aria-label="Stop" className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-ink text-white active:scale-95">

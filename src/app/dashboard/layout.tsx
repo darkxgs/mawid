@@ -47,7 +47,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 border-b border-mist bg-paper/90 px-4 pt-3 pb-2 backdrop-blur-md lg:hidden">
+        <header className="sticky top-0 z-30 border-b border-mist glass px-4 pt-3 pb-2 lg:hidden">
           <div className="mb-2 flex items-center justify-between">
             <Link href="/dashboard">
               <Logo />

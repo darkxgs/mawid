@@ -94,7 +94,7 @@ export function DayStrip({
               disabled={disabled}
               onClick={() => onSelect(d.date)}
               className={cn(
-                "group relative flex h-[92px] w-[60px] shrink-0 snap-start flex-col items-center rounded-[14px] border pt-2.5 transition-[background-color,border-color,color] duration-150",
+                "group relative flex h-[92px] w-[60px] shrink-0 snap-start flex-col items-center rounded-[14px] border pt-2.5 transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.96] active:duration-75",
                 isSel
                   ? "border-ink bg-ink text-white"
                   : "border-mist bg-card text-ink hover:border-ink-2/40",

@@ -191,7 +191,7 @@ export function SettingsView({ business: b, base, qr }: { business: B; base: str
           </label>
         </Section>
 
-        <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-3 border-t border-mist bg-paper/90 px-4 py-3 backdrop-blur-md sm:-mx-8 sm:px-8">
+        <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-3 border-t border-mist glass px-4 py-3 sm:-mx-8 sm:px-8">
           {state ? (
             <p role="status" className={state.ok ? "me-auto text-[14px] text-sea" : "me-auto text-[14px] text-rose"}>
               {state.ok ? state.message : state.error}

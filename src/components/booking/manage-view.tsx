@@ -243,7 +243,7 @@ export function ManageView({
                   <p className="rounded-panel border border-dashed border-mist p-6 text-[14px] text-ink-2">{t.noTimesDay}</p>
                 ) : null}
               </div>
-              <div className="sticky bottom-0 -mx-4 mt-8 flex items-center gap-4 border-t border-mist bg-paper/92 px-4 py-3 backdrop-blur-md sm:mx-0 sm:px-0 lg:border-0 lg:bg-transparent">
+              <div className="sticky bottom-0 -mx-4 mt-8 flex items-center gap-4 border-t border-mist glass px-4 py-3 sm:mx-0 sm:px-0 lg:border-0 lg:bg-transparent">
                 <p className="tnum min-w-0 flex-1 truncate text-[15px] font-medium">
                   {slot
                     ? `${formatDateShort(new Date(slot.start), business.timezone, locale)}${locale === "ar" ? "، " : ", "}${formatTime(new Date(slot.start), business.timezone, locale)}`

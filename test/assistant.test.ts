@@ -17,7 +17,9 @@ const NOW = zonedToUtc("2026-11-01", 8 * 60, TZ);
 let db: DB;
 let ctx: AssistantContext;
 const deferred: (() => Promise<unknown>)[] = [];
-const run = <I, O>(t: { execute?: (input: I, opts: never) => O }, input: I) => t.execute!(input, { toolCallId: "t", messages: [] } as never) as Awaited<O>;
+// Tools here are plain async functions (not streaming), so the result is the output itself.
+type Exec<I, O> = { execute?: (input: I, opts: never) => PromiseLike<O> | O | AsyncIterable<O> };
+const run = async <I, O>(t: Exec<I, O>, input: I): Promise<O> => (await t.execute!(input, { toolCallId: "t", messages: [] } as never)) as O;
 
 beforeAll(async () => {
   const client = await PGlite.create({ extensions: { btree_gist } });
@@ -37,7 +39,7 @@ describe("assistant tools", () => {
   it("finds free times inside a window", async () => {
     const tools = makeTools(ctx);
     const r = await run(tools.findFreeTimes, { serviceId: "s1", from: MONDAY, days: 1, between: { from: "10:00", to: "11:00" } });
-    expect("days" in r && r.days[0].times.map((t) => t.time)).toEqual(["10:00", "10:15", "10:30", "10:45"]);
+    expect(r.days?.[0].times.map((t) => t.time)).toEqual(["10:00", "10:15", "10:30", "10:45"]);
   });
 
   it("books, refuses the same time twice, then moves and cancels", async () => {

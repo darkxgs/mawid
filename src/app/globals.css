@@ -47,17 +47,6 @@
   }
 }
 
-@keyframes sheet-in {
-  from {
-    transform: translateX(24px);
-    opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
-}
-
 @keyframes pulse-soft {
   0%,
   100% {
@@ -109,6 +98,78 @@ body {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Translucent chrome: content scrolls underneath. Solid when the system asks. */
+.glass {
+  background: rgb(245 247 246 / 0.86);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+
+/*
+  Dialogs and sheets leave the way they came in: the same transform runs
+  forwards on open and backwards on close (allow-discrete keeps the dialog
+  in the top layer until the exit finishes).
+*/
+dialog.overlay {
+  transition:
+    display 240ms allow-discrete,
+    overlay 240ms allow-discrete;
+}
+dialog.overlay::backdrop {
+  background: rgb(15 46 53 / 0);
+  transition:
+    background-color 240ms ease,
+    display 240ms allow-discrete,
+    overlay 240ms allow-discrete;
+}
+dialog.overlay[open]::backdrop {
+  background: rgb(15 46 53 / 0.35);
+}
+@starting-style {
+  dialog.overlay[open]::backdrop {
+    background: rgb(15 46 53 / 0);
+  }
+}
+dialog.overlay .overlay-panel {
+  transition:
+    transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 200ms ease;
+}
+dialog.overlay:not([open]) .overlay-panel {
+  opacity: 0;
+}
+dialog.overlay[data-variant="sheet"]:not([open]) .overlay-panel {
+  transform: translateX(32px);
+}
+dialog.overlay[data-variant="modal"]:not([open]) .overlay-panel {
+  transform: translateY(16px) scale(0.985);
+}
+@starting-style {
+  dialog.overlay[open] .overlay-panel {
+    opacity: 0;
+  }
+  dialog.overlay[data-variant="sheet"][open] .overlay-panel {
+    transform: translateX(32px);
+  }
+  dialog.overlay[data-variant="modal"][open] .overlay-panel {
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--color-paper);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --color-mist: #a9b8b5;
+    --color-muted: #3f5559;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

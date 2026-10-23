@@ -9,7 +9,7 @@ type ButtonVariant = "primary" | "dark" | "outline" | "ghost" | "danger" | "saff
 type ButtonSize = "sm" | "md" | "lg";
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 font-medium transition-[background-color,color,box-shadow,transform] duration-150 disabled:pointer-events-none disabled:opacity-50 active:translate-y-px select-none";
+  "inline-flex items-center justify-center gap-2 font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.97] active:duration-75 disabled:pointer-events-none disabled:opacity-50 select-none";
 const buttonVariants: Record<ButtonVariant, string> = {
   primary: "bg-sea text-white hover:bg-sea-deep shadow-[inset_0_-1px_0_rgb(0_0_0/0.15)]",
   dark: "bg-ink text-white hover:bg-ink-2",

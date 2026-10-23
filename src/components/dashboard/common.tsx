@@ -72,18 +72,18 @@ export function Overlay({
         if (e.target === e.currentTarget) onClose();
       }}
       style={{ ["--w" as string]: `${width}px` }}
+      data-variant={variant}
       className={cn(
-        "m-0 max-h-none max-w-none bg-transparent p-0 text-ink backdrop:bg-ink/35 backdrop:backdrop-blur-[2px] open:flex",
+        "overlay m-0 max-h-none max-w-none bg-transparent p-0 text-ink open:flex",
         variant === "modal" && "inset-0 h-dvh w-full items-end justify-center sm:items-center",
         variant === "sheet" && "inset-0 h-dvh w-full justify-end",
       )}
     >
       <div
         className={cn(
-          "flex flex-col bg-card shadow-pop",
-          variant === "modal" &&
-            "max-h-[92dvh] w-full animate-rise rounded-t-[20px] sm:w-[var(--w)] sm:max-w-[calc(100vw-2rem)] sm:rounded-[20px]",
-          variant === "sheet" && "h-full w-full animate-[sheet-in_260ms_cubic-bezier(0.2,0.7,0.2,1)] sm:w-[var(--w)]",
+          "overlay-panel flex flex-col bg-card shadow-pop",
+          variant === "modal" && "max-h-[92dvh] w-full rounded-t-[20px] sm:w-[var(--w)] sm:max-w-[calc(100vw-2rem)] sm:rounded-[20px]",
+          variant === "sheet" && "h-full w-full sm:w-[var(--w)]",
         )}
       >
         <div className="flex items-center justify-between gap-4 border-b border-mist px-5 py-4 sm:px-6">
