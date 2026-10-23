@@ -10,6 +10,9 @@ import { HERO_FILM, PHOTOS } from "@/lib/media";
 import { renderMessage } from "@/lib/messages";
 import { demoLogin } from "./(auth)/actions";
 
+/** The product screenshot spans the 7xl container less its padding. */
+const SCREEN_SIZES = "(min-width: 1280px) 1200px, (min-width: 640px) calc(100vw - 80px), calc(100vw - 40px)";
+
 export const metadata: Metadata = {
   title: { absolute: "Mawid | Online booking and WhatsApp reminders for clinics and salons" },
   description:
@@ -182,14 +185,20 @@ export default function Home() {
             </p>
           </div>
           <div className="mt-14 overflow-hidden rounded-t-[10px] ring-1 ring-white/10">
-            <Image
-              src="/product/dashboard-today.png"
-              alt="The Today screen: a timeline of appointments for three team members, with day totals above."
-              width={2880}
-              height={1800}
-              unoptimized
-              className="h-auto w-full"
-            />
+            {/* Pre-encoded so the UI text stays sharp: AVIF is about a fifth of the PNG's weight. */}
+            <picture>
+              <source type="image/avif" srcSet="/product/dashboard-today-1440.avif 1440w, /product/dashboard-today.avif 2880w" sizes={SCREEN_SIZES} />
+              <source type="image/webp" srcSet="/product/dashboard-today-1440.webp 1440w, /product/dashboard-today.webp 2880w" sizes={SCREEN_SIZES} />
+              <img
+                src="/product/dashboard-today.png"
+                alt="The Today screen: a timeline of appointments for three team members, with day totals above."
+                width={2880}
+                height={1800}
+                loading="lazy"
+                decoding="async"
+                className="h-auto w-full"
+              />
+            </picture>
           </div>
         </div>
       </section>
