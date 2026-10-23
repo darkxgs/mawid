@@ -214,7 +214,7 @@ export default function Home() {
           <div>
             <h2 className="font-display text-[30px] leading-[1.1] font-semibold tracking-[-0.03em]">Under the hood</h2>
             <p className="mt-4 max-w-sm text-[16px] leading-relaxed text-ink-2">
-              Next.js 16, React 19, Postgres with Drizzle, and the AI SDK for the front-desk assistant. The database enforces the rules; the tests run against a real Postgres engine.
+              Next.js 16, React 19 and Postgres with Drizzle. The front-desk assistant answers in English and Arabic from the live schedule, and changes nothing until the owner confirms. The database enforces the rules; the tests run against a real Postgres engine.
             </p>
             <a href="https://github.com/darkxgs/mawid" className={buttonClass("dark", "md", "mt-6")}>
               Read the source

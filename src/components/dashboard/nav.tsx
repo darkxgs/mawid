@@ -6,8 +6,8 @@ import {
   Layers,
   ListChecks,
   MessageCircle,
+  MessagesSquare,
   Settings,
-  Sparkles,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,7 +17,7 @@ import { cn } from "@/components/ui";
 export const NAV = [
   { href: "/dashboard", label: "Today", icon: CalendarDays },
   { href: "/dashboard/bookings", label: "Bookings", icon: ListChecks },
-  { href: "/dashboard/assistant", label: "Assistant", icon: Sparkles },
+  { href: "/dashboard/assistant", label: "Assistant", icon: MessagesSquare },
   { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
   { href: "/dashboard/insights", label: "Insights", icon: BarChart3 },
   { href: "/dashboard/services", label: "Services", icon: Layers },

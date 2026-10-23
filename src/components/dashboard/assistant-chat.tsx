@@ -1,61 +1,94 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import {
-  DefaultChatTransport,
-  lastAssistantMessageIsCompleteWithApprovalResponses,
-  type InferUITools,
-  type UIDataTypes,
-  type UIMessage,
-} from "ai";
-import { ArrowUp, CalendarCheck, CalendarX, Check, Clock, RotateCcw, Square, X } from "lucide-react";
+import { ArrowUp, CalendarCheck, CalendarX, Check, Clock, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import { Button, Spinner, cn } from "@/components/ui";
-import type { AssistantTools } from "@/server/assistant";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { ask } from "@/app/dashboard/assistant/actions";
+import { Badge, Button, Input, cn, type StatusTone } from "@/components/ui";
+import { hasArabic, type Block, type BookStep, type Chip, type Lang, type Reply, type Row, type Step } from "@/lib/assistant/types";
 
-type Msg = UIMessage<never, UIDataTypes, InferUITools<AssistantTools>>;
-type Part = Msg["parts"][number];
+type Msg = { id: string; role: "user"; text: string } | { id: string; role: "assistant"; reply: Reply; used: Record<number, string> };
+type Suggestion = { label: string; step?: Step };
 
-const SUGGESTIONS = [
-  "Who's free tomorrow afternoon for a check-up?",
-  "What does Dr. Layla have today?",
-  "How many no-shows did we have last week?",
-  "Book Sophie Turner (050 123 4567) for whitening on the next free Thursday afternoon",
-  "مين عنده مواعيد بكرة الصبح؟",
-];
+const UI = {
+  en: { more: (n: number) => `+${n} more`, top: "Most booked", messagesIn: "Messages in", name: "Name", mobile: "Mobile", next: "Continue", chose: "You chose" },
+  ar: { more: (n: number) => `+${n} أخرى`, top: "الأكثر حجزًا", messagesIn: "لغة الرسائل", name: "الاسم", mobile: "الجوال", next: "متابعة", chose: "اخترت" },
+};
+const STATUS: Record<string, { en: string; ar: string; tone: StatusTone }> = {
+  completed: { en: "Attended", ar: "حضر", tone: "completed" },
+  no_show: { en: "No-show", ar: "لم يحضر", tone: "no_show" },
+  cancelled: { en: "Cancelled", ar: "ملغي", tone: "cancelled" },
+};
 
-export function AssistantChat({ businessName }: { businessName: string }) {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+let seq = 0;
+const nextId = () => `m${++seq}`;
+
+export function AssistantChat({ businessName, staffName, serviceName }: { businessName: string; staffName?: string; serviceName?: string }) {
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const { messages, sendMessage, addToolApprovalResponse, status, stop, error, setMessages, regenerate } = useChat<Msg>({
-    transport: new DefaultChatTransport({ api: "/api/assistant" }),
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
-  });
+  const [pending, setPending] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLTextAreaElement>(null);
-  const busy = status === "submitted" || status === "streaming";
+
+  const last = messages.at(-1);
+  const latest = last?.role === "assistant" ? last : null;
+  const expect = latest?.reply.expect;
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-  }, [messages, status]);
+  }, [messages, pending]);
 
-  function send(text: string) {
-    const t = text.trim();
-    if (!t || busy) return;
-    void sendMessage({ text: t });
+  const suggestions: Suggestion[] = [
+    { label: "What's on today?" },
+    ...(serviceName ? [{ label: `Free times tomorrow afternoon for ${serviceName}` }] : []),
+    ...(staffName ? [{ label: `What does ${staffName} have today?` }] : []),
+    { label: "How many no-shows did we have last week?" },
+    { label: "Book an appointment" },
+    { label: "Find a customer", step: { t: "customer" } as Step },
+    { label: "مين عنده مواعيد بكرة الصبح؟" },
+  ];
+
+  async function run(step: Step, label: string, lang: Lang) {
+    if (pending) return;
+    setMessages((m) => [...m, { id: nextId(), role: "user", text: label }]);
+    if (step.t === "noop") {
+      const reply: Reply = { lang, text: lang === "ar" ? "تمام، لم يتغير شيء." : "Okay, nothing changed.", blocks: [], chips: [] };
+      setMessages((m) => [...m, { id: nextId(), role: "assistant", reply, used: {} }]);
+      return;
+    }
+    setPending(true);
+    const failed: Reply = { lang, text: lang === "ar" ? "حدث خطأ. حاول مرة أخرى." : "Something went wrong there. Try again.", blocks: [], chips: [] };
+    // A beat of "typing" so answers don't snap in before the question settles.
+    const [reply] = await Promise.all([ask(step, lang).catch(() => failed), sleep(420)]);
+    setMessages((m) => [...m, { id: nextId(), role: "assistant", reply, used: {} }]);
+    setPending(false);
+  }
+
+  function sendTyped(e?: FormEvent) {
+    e?.preventDefault();
+    const text = input.trim();
+    if (!text || pending) return;
+    const lang: Lang = hasArabic(text) ? "ar" : expect ? (latest?.reply.lang ?? "en") : "en";
+    const step: Step = expect ? { t: "customer", query: text, then: expect.then, date: expect.date, part: expect.part } : { t: "text", text };
     setInput("");
+    void run(step, text, lang);
     field.current?.focus();
+  }
+
+  function use(msgId: string, block: number, choice: string) {
+    setMessages((m) => m.map((x) => (x.id === msgId && x.role === "assistant" ? { ...x, used: { ...x.used, [block]: choice } } : x)));
   }
 
   return (
     <div className="flex h-[calc(100dvh-37px)] flex-col max-lg:h-[calc(100dvh-140px)]">
       <div className="flex items-center justify-between gap-4 border-b border-mist px-4 py-4 sm:px-8">
-        <div>
+        <div className="min-w-0">
           <h1 className="font-display text-[22px] leading-tight font-semibold">Assistant</h1>
-          <p className="text-[13.5px] text-muted">Ask about the diary, find free times, book, move or cancel. You approve every change.</p>
+          <p className="text-[13.5px] text-muted">Quick answers from the live schedule, in English or Arabic. Nothing changes until you confirm.</p>
         </div>
         {messages.length ? (
-          <Button variant="ghost" size="sm" onClick={() => setMessages([])} disabled={busy}>
+          <Button variant="ghost" size="sm" onClick={() => setMessages([])} disabled={pending} className="shrink-0 whitespace-nowrap">
             <RotateCcw className="size-3.5" /> New chat
           </Button>
         ) : null}
@@ -66,16 +99,17 @@ export function AssistantChat({ businessName }: { businessName: string }) {
           {!messages.length ? (
             <div className="pt-6">
               <p className="font-display text-[24px] leading-snug font-semibold text-balance">What do you need at {businessName} today?</p>
+              <p className="mt-1.5 text-[14.5px] text-muted">Pick one, or type your own question.</p>
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <button
-                    key={s}
+                    key={s.label}
                     type="button"
-                    onClick={() => send(s)}
+                    onClick={() => void run(s.step ?? { t: "text", text: s.label }, s.label, hasArabic(s.label) ? "ar" : "en")}
                     dir="auto"
                     className="rounded-[14px] border border-mist bg-card px-4 py-3 text-start text-[14px] leading-snug text-ink-2 transition-[border-color,transform] duration-100 hover:border-sea/50 active:scale-[0.98]"
                   >
-                    {s}
+                    {s.label}
                   </button>
                 ))}
               </div>
@@ -86,42 +120,32 @@ export function AssistantChat({ businessName }: { businessName: string }) {
             m.role === "user" ? (
               <div key={m.id} className="flex justify-end">
                 <p dir="auto" className="max-w-[80%] rounded-[18px] rounded-ee-[6px] bg-ink px-4 py-2.5 text-[14.5px] leading-relaxed whitespace-pre-wrap text-white">
-                  {m.parts.map((p) => (p.type === "text" ? p.text : "")).join("")}
+                  {m.text}
                 </p>
               </div>
             ) : (
-              <div key={m.id} className="grid gap-3">
-                {m.parts.map((p, i) => (
-                  <AssistantPart key={i} part={p} onApprove={(id, approved) => addToolApprovalResponse({ id, approved })} />
-                ))}
-              </div>
+              <Answer
+                key={m.id}
+                msg={m}
+                live={m === latest && !pending}
+                onStep={(step, label) => void run(step, label, m.reply.lang)}
+                onUse={(block, choice) => use(m.id, block, choice)}
+              />
             ),
           )}
 
-          {status === "submitted" ? (
-            <p className="flex items-center gap-2 text-[14px] text-muted">
-              <Spinner /> Thinking
-            </p>
-          ) : null}
-          {error ? (
-            <div className="flex items-center gap-3 rounded-control bg-rose-soft px-4 py-3 text-[14px] text-rose">
-              <span className="flex-1">{error.message || "Something went wrong."}</span>
-              <Button variant="outline" size="sm" onClick={() => regenerate()}>
-                Try again
-              </Button>
+          {pending ? (
+            <div aria-live="polite" className="flex items-center gap-1.5 py-2" aria-label="Looking that up">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="size-1.5 animate-pulse rounded-full bg-ink-2/50 motion-reduce:animate-none" style={{ animationDelay: `${i * 160}ms` }} />
+              ))}
             </div>
           ) : null}
           <div ref={end} />
         </div>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          send(input);
-        }}
-        className="border-t border-mist glass px-4 py-3 sm:px-8"
-      >
+      <form onSubmit={sendTyped} className="border-t border-mist glass px-4 py-3 sm:px-8">
         <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[16px] border border-mist bg-card p-2 focus-within:border-sea focus-within:ring-4 focus-within:ring-sea/10">
           <textarea
             ref={field}
@@ -130,236 +154,402 @@ export function AssistantChat({ businessName }: { businessName: string }) {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
-                send(input);
+                sendTyped();
               }
             }}
             rows={1}
             dir="auto"
-            placeholder="Ask or tell the assistant…"
+            placeholder={expect?.placeholder ?? "Ask about today, free times or a customer…"}
             aria-label="Message"
             className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 placeholder:text-faint focus:outline-none focus-visible:outline-none [field-sizing:content]"
           />
-          {busy ? (
-            <button type="button" onClick={() => stop()} aria-label="Stop" className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-ink text-white active:scale-95">
-              <Square className="size-3.5 fill-current" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              aria-label="Send"
-              disabled={!input.trim()}
-              className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-sea text-white transition-[transform,opacity] duration-100 active:scale-95 disabled:opacity-40"
-            >
-              <ArrowUp className="size-4" />
-            </button>
-          )}
+          <button
+            type="submit"
+            aria-label="Send"
+            disabled={!input.trim() || pending}
+            className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-sea text-white transition-[transform,opacity] duration-100 active:scale-95 disabled:opacity-40"
+          >
+            <ArrowUp className="size-4" />
+          </button>
         </div>
       </form>
     </div>
   );
 }
 
-/* ----------------------------- parts ------------------------------ */
+/* ------------------------------ answer ----------------------------- */
 
-function AssistantPart({ part, onApprove }: { part: Part; onApprove: (id: string, approved: boolean) => void }) {
-  switch (part.type) {
-    case "text":
-      return part.text ? <RichText text={part.text} /> : null;
-    case "tool-findFreeTimes":
-      if (part.state === "output-available" && part.output.days) return <FreeTimes output={{ service: part.output.service, days: part.output.days }} />;
-      return <ToolStatus state={part.state} running="Checking free times" />;
-    case "tool-listAppointments":
-      if (part.state === "output-available") return <AppointmentList title={`${part.output.weekday} ${part.output.date}`} rows={part.output.appointments} />;
-      return <ToolStatus state={part.state} running="Opening the diary" />;
-    case "tool-findCustomer":
-      return part.state === "output-available" ? null : <ToolStatus state={part.state} running="Looking up the customer" />;
-    case "tool-businessStats":
-      return part.state === "output-available" ? null : <ToolStatus state={part.state} running="Counting" />;
-    case "tool-bookAppointment":
-    case "tool-cancelAppointment":
-    case "tool-moveAppointment":
-      return <ActionCard part={part} onApprove={onApprove} />;
-    default:
-      return null;
-  }
-}
-
-function ToolStatus({ state, running }: { state: string; running: string }) {
-  if (state === "output-error") return <p className="text-[13px] text-rose">That lookup failed.</p>;
-  if (state === "output-available") return null;
+function Answer({
+  msg,
+  live,
+  onStep,
+  onUse,
+}: {
+  msg: Extract<Msg, { role: "assistant" }>;
+  live: boolean;
+  onStep: (step: Step, label: string) => void;
+  onUse: (block: number, choice: string) => void;
+}) {
+  const { reply } = msg;
+  const l = reply.lang;
   return (
-    <p className="flex items-center gap-2 text-[13px] text-muted">
-      <Spinner className="size-3.5" /> {running}
-    </p>
-  );
-}
-
-type ActionPart = Extract<Part, { type: "tool-bookAppointment" | "tool-cancelAppointment" | "tool-moveAppointment" }>;
-
-function ActionCard({ part, onApprove }: { part: ActionPart; onApprove: (id: string, approved: boolean) => void }) {
-  const kind = part.type === "tool-bookAppointment" ? "book" : part.type === "tool-cancelAppointment" ? "cancel" : "move";
-  const Icon = kind === "cancel" ? CalendarX : kind === "move" ? Clock : CalendarCheck;
-  const title = kind === "book" ? "Book this appointment?" : kind === "cancel" ? "Cancel this appointment?" : "Move this appointment?";
-  const input = part.input as Record<string, unknown> | undefined;
-
-  let body: ReactNode = null;
-  if (input) {
-    if (kind === "book") {
-      body = (
-        <dl className="grid grid-cols-[84px_1fr] gap-x-3 gap-y-1 text-[14px]">
-          <dt className="text-muted">Customer</dt>
-          <dd>
-            {String(input.customerName ?? "")} <span className="tnum text-muted">{String(input.customerPhone ?? "")}</span>
-          </dd>
-          <dt className="text-muted">When</dt>
-          <dd className="tnum">
-            {String(input.date ?? "")} at {String(input.time ?? "")}
-          </dd>
-          <dt className="text-muted">Message</dt>
-          <dd>{input.sendConfirmation === false ? "No confirmation" : `WhatsApp confirmation in ${input.language === "en" ? "English" : "Arabic"}`}</dd>
-        </dl>
-      );
-    } else {
-      body = <p className="text-[14px] leading-relaxed">{String(input.summary ?? "")}</p>;
-    }
-  }
-
-  const output = part.state === "output-available" ? (part.output as { ok: boolean; error?: string; booking?: { date: string; start: string; with: string; service: string } }) : null;
-
-  return (
-    <div
-      className={cn(
-        "rounded-[16px] border bg-card p-4 shadow-[0_1px_2px_rgb(15_46_53/0.05)] transition-colors",
-        part.state === "approval-requested" ? "border-saffron/60" : "border-mist",
-      )}
-    >
-      <p className="flex items-center gap-2 text-[14px] font-medium">
-        <Icon className={cn("size-4", kind === "cancel" ? "text-rose" : "text-sea")} />
-        {output?.ok
-          ? kind === "book"
-            ? "Booked"
-            : kind === "cancel"
-              ? "Cancelled"
-              : "Moved"
-          : part.state === "output-denied"
-            ? "Not done"
-            : title}
-      </p>
-      <div className="mt-2.5">{body ?? <Spinner className="text-muted" />}</div>
-
-      {part.state === "approval-requested" && !part.approval.isAutomatic ? (
-        <div className="mt-4 flex gap-2">
-          <Button size="sm" variant={kind === "cancel" ? "danger" : "primary"} onClick={() => onApprove(part.approval.id, true)} className="active:scale-[0.97]">
-            <Check className="size-3.5" />
-            {kind === "book" ? "Book it" : kind === "cancel" ? "Cancel it" : "Move it"}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => onApprove(part.approval.id, false)} className="active:scale-[0.97]">
-            <X className="size-3.5" /> Don&apos;t
-          </Button>
+    <div dir={l === "ar" ? "rtl" : "ltr"} lang={l} className="grid animate-rise gap-3">
+      <p className="text-[14.5px] leading-relaxed text-ink">{reply.text}</p>
+      {reply.blocks.map((b, i) => (
+        <BlockView key={i} block={b} lang={l} live={live} used={msg.used[i]} onStep={onStep} onUse={(choice) => onUse(i, choice)} />
+      ))}
+      {reply.chips.length && live ? (
+        <div className="flex flex-wrap gap-2 pt-1">
+          {reply.chips.map((c) => (
+            <ChipButton key={c.label} chip={c} onClick={() => onStep(c.step, c.label)} />
+          ))}
         </div>
       ) : null}
-      {part.state === "approval-responded" || (part.state === "input-available" && !output) ? (
-        <p className="mt-3 flex items-center gap-2 text-[13px] text-muted">
-          <Spinner className="size-3.5" /> Working on it
-        </p>
-      ) : null}
-      {output && !output.ok ? <p className="mt-3 text-[13.5px] text-rose">{output.error}</p> : null}
-      {output?.ok && output.booking ? (
-        <p className="mt-3 text-[13.5px] text-sea-deep">
-          {output.booking.service} with {output.booking.with}, {output.booking.date} at {output.booking.start}.{" "}
-          <Link href={`/dashboard?date=${output.booking.date}`} className="font-medium underline underline-offset-2">
-            Open the day
-          </Link>
-        </p>
-      ) : null}
-      {part.state === "output-denied" ? <p className="mt-2 text-[13px] text-muted">You chose not to go ahead.</p> : null}
     </div>
   );
 }
 
-type FreeOutput = { service?: string; days: { date: string; weekday: string; closed: boolean; times: { time: string; free: { name: string }[] }[] }[] };
-
-function FreeTimes({ output }: { output: FreeOutput }) {
-  const days = output.days.filter((d) => d.times.length);
-  if (!days.length) return <p className="text-[13.5px] text-muted">No free times found for {output.service ?? "that service"}.</p>;
+function ChipButton({ chip, onClick, disabled, small }: { chip: Chip; onClick: () => void; disabled?: boolean; small?: boolean }) {
   return (
-    <div className="rounded-[16px] border border-mist bg-card p-4">
-      <p className="text-[13px] text-muted">Free times{output.service ? ` for ${output.service}` : ""}</p>
-      <div className="mt-2 grid gap-3">
-        {days.slice(0, 4).map((d) => (
-          <div key={d.date}>
-            <p className="text-[13.5px] font-medium">
-              {d.weekday} <span className="tnum text-muted">{d.date.slice(5).replace("-", "/")}</span>
-            </p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {d.times.slice(0, 12).map((t) => (
-                <span key={t.time} title={t.free.map((f) => f.name).join(", ")} className="tnum rounded-[8px] border border-mist px-2 py-1 text-[13px]">
-                  {t.time}
-                </span>
-              ))}
-            </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "rounded-full border transition-[background-color,border-color,transform] duration-100 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40",
+        small ? "h-7 px-3 text-[12.5px]" : "h-8 px-3.5 text-[13px]",
+        chip.tone === "danger" ? "border-rose/30 text-rose hover:bg-rose-soft" : "border-mist bg-card text-ink-2 hover:border-sea/50 hover:text-ink",
+      )}
+    >
+      {chip.label}
+    </button>
+  );
+}
+
+function BlockView({
+  block,
+  lang,
+  live,
+  used,
+  onStep,
+  onUse,
+}: {
+  block: Block;
+  lang: Lang;
+  live: boolean;
+  used?: string;
+  onStep: (step: Step, label: string) => void;
+  onUse: (choice: string) => void;
+}) {
+  const ui = UI[lang];
+  switch (block.kind) {
+    case "times":
+      return (
+        <Card>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <p className="text-[13px] font-medium text-ink-2">{block.title}</p>
+            {block.hint && live ? <p className="text-[12.5px] text-muted">{block.hint}</p> : null}
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-type Row = { bookingId: string; start: string; end: string; service: string; with: string; status: string; customer: { name: string } | null };
-
-function AppointmentList({ title, rows }: { title: string; rows: Row[] }) {
-  if (!rows.length) return <p className="text-[13.5px] text-muted">Nothing booked on {title}.</p>;
-  return (
-    <div className="overflow-hidden rounded-[16px] border border-mist bg-card">
-      <p className="border-b border-mist px-4 py-2.5 text-[13px] text-muted">{title}</p>
-      <ul className="max-h-72 divide-y divide-mist overflow-y-auto">
-        {rows.map((r) => (
-          <li key={r.bookingId} className="flex items-center gap-3 px-4 py-2 text-[13.5px]">
-            <span className="tnum w-12 shrink-0 font-medium">{r.start}</span>
-            <span className="min-w-0 flex-1 truncate">
-              {r.customer?.name}
-              <span className="text-muted"> {r.service}</span>
-            </span>
-            <span className="shrink-0 text-[12.5px] text-muted">{r.with}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/** Minimal formatting for model text: paragraphs, bullet lists and **bold**. */
-function RichText({ text }: { text: string }) {
-  const blocks = text.trim().split(/\n{2,}/);
-  return (
-    <div dir="auto" className="grid gap-2 text-[14.5px] leading-relaxed">
-      {blocks.map((b, i) => {
-        const lines = b.split("\n");
-        if (lines.every((l) => /^\s*([-*•]|\d+\.)\s+/.test(l))) {
-          return (
-            <ul key={i} className="grid list-disc gap-1 ps-5 marker:text-faint">
-              {lines.map((l, j) => (
-                <li key={j}>{inline(l.replace(/^\s*([-*•]|\d+\.)\s+/, ""))}</li>
-              ))}
-            </ul>
-          );
-        }
-        return (
-          <p key={i}>
-            {lines.map((l, j) => (
-              <Fragment key={j}>
-                {j ? <br /> : null}
-                {inline(l)}
-              </Fragment>
+          <div className="mt-3 grid gap-4">
+            {block.days.map((d) => (
+              <div key={d.date}>
+                <p className="text-[13.5px] font-medium">{d.label}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {d.times.map((t) => (
+                    <button
+                      key={t.time}
+                      type="button"
+                      title={t.who}
+                      disabled={!live || !t.step}
+                      onClick={() => t.step && onStep(t.step, `${d.label}, ${t.label}`)}
+                      className="h-9 min-w-[64px] rounded-[9px] border border-mist bg-card px-2.5 text-[13.5px] whitespace-nowrap transition-[background-color,border-color,color,transform] duration-100 hover:border-ink hover:bg-ink hover:text-white active:scale-[0.96] disabled:pointer-events-none"
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                  {d.more ? <span className="self-center px-1 text-[12.5px] text-muted">{ui.more(d.more)}</span> : null}
+                </div>
+              </div>
             ))}
+          </div>
+        </Card>
+      );
+
+    case "list":
+      return (
+        <Card flush>
+          <div className="flex items-center justify-between gap-3 border-b border-mist px-4 py-2.5">
+            <p className="text-[13px] font-medium text-ink-2">{block.title}</p>
+            {block.href ? (
+              <Link href={block.href} className="shrink-0 text-[12.5px] font-medium text-sea-deep underline-offset-2 hover:underline">
+                {block.linkLabel}
+              </Link>
+            ) : null}
+          </div>
+          <ul className="divide-y divide-mist sm:max-h-80 sm:overflow-y-auto">
+            {block.rows.map((r, i) => (
+              <RowView key={i} row={r} lang={lang} />
+            ))}
+          </ul>
+        </Card>
+      );
+
+    case "stats":
+      return (
+        <Card>
+          <p className="text-[13px] font-medium text-ink-2">{block.title}</p>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4">
+            {block.items.map((it) => (
+              <div key={it.label} className="min-w-0">
+                <dt className="text-[12.5px] text-muted">{it.label}</dt>
+                <dd className="font-display mt-0.5 text-[22px] leading-tight font-semibold">{it.value}</dd>
+                {it.note ? <dd className="mt-0.5 text-[12px] leading-snug text-muted">{it.note}</dd> : null}
+              </div>
+            ))}
+          </dl>
+          {block.top?.length ? (
+            <div className="mt-4 border-t border-mist pt-3">
+              <p className="text-[12.5px] text-muted">{ui.top}</p>
+              <ul className="mt-1.5 grid gap-1">
+                {block.top.map((t) => (
+                  <li key={t.label} className="flex justify-between gap-3 text-[13.5px]">
+                    <span className="truncate">{t.label}</span>
+                    <span className="text-ink-2">{t.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </Card>
+      );
+
+    case "customers":
+      return (
+        <div className="grid gap-3">
+          {block.items.map((p) => (
+            <Card key={p.name + p.phone} flush>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-mist px-4 py-3">
+                <p className="text-[15px] font-medium">{p.name}</p>
+                <p dir="ltr" className="text-[13px] text-muted">
+                  {p.phone}
+                </p>
+              </div>
+              <div className="px-4 pt-2.5 pb-1 text-[12.5px] text-muted">{p.upcomingLabel}</div>
+              {p.upcoming.length ? (
+                <ul className="divide-y divide-mist">
+                  {p.upcoming.map((r, i) => (
+                    <RowView key={i} row={r} lang={lang} live={live} onStep={onStep} wide />
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-4 pb-3 text-[13.5px] text-ink-2">{p.noneLabel}</p>
+              )}
+              {p.recent.length ? (
+                <>
+                  <div className="border-t border-mist px-4 pt-2.5 pb-1 text-[12.5px] text-muted">{p.recentLabel}</div>
+                  <ul className="divide-y divide-mist pb-1">
+                    {p.recent.map((r, i) => (
+                      <RowView key={i} row={r} lang={lang} muted wide />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </Card>
+          ))}
+        </div>
+      );
+
+    case "confirm": {
+      const Icon = block.tone === "cancel" ? CalendarX : block.tone === "move" ? Clock : CalendarCheck;
+      const open = live && !used;
+      return (
+        <div className={cn("rounded-[16px] border bg-card p-4 transition-colors", open ? "border-saffron/70" : "border-mist")}>
+          <p className="flex items-center gap-2 text-[14.5px] font-medium">
+            <Icon className={cn("size-4", block.tone === "cancel" ? "text-rose" : "text-sea")} />
+            {block.title}
           </p>
-        );
-      })}
-    </div>
+          <dl className="mt-3 grid grid-cols-[88px_1fr] gap-x-3 gap-y-1.5 text-[14px]">
+            {block.lines.map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt className="text-muted">{k}</dt>
+                <dd className="min-w-0">{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {block.note ? <p className="mt-3 text-[13px] leading-relaxed text-muted">{block.note}</p> : null}
+          {open ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={block.yes.tone === "danger" ? "danger" : "primary"}
+                onClick={() => {
+                  onUse(block.yes.label);
+                  onStep(block.yes.step, block.yes.label);
+                }}
+              >
+                <Check className="size-3.5" />
+                {block.yes.label}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  onUse(block.no.label);
+                  onStep(block.no.step, block.no.label);
+                }}
+              >
+                {block.no.label}
+              </Button>
+            </div>
+          ) : used ? (
+            <p className="mt-3 text-[12.5px] text-muted">
+              {ui.chose}: {used}
+            </p>
+          ) : null}
+        </div>
+      );
+    }
+
+    case "contact":
+      return live && !used ? (
+        <ContactForm
+          block={block}
+          lang={lang}
+          onSubmit={(step, label) => {
+            onUse(label);
+            onStep(step, label);
+          }}
+        />
+      ) : null;
+
+    case "done": {
+      const Icon = block.tone === "cancel" ? CalendarX : block.tone === "move" ? Clock : CalendarCheck;
+      return (
+        <div className={cn("rounded-[16px] border p-4", block.tone === "cancel" ? "border-mist bg-card" : "border-sea/25 bg-sea-soft")}>
+          <p className="flex items-center gap-2 text-[14.5px] font-medium">
+            <Icon className={cn("size-4", block.tone === "cancel" ? "text-ink-2" : "text-sea-deep")} />
+            {block.title}
+          </p>
+          <p className="mt-1.5 text-[14px] leading-relaxed">{block.text}</p>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            {block.links.map((a) => (
+              <Link key={a.href} href={a.href} className="text-[13px] font-medium text-sea-deep underline underline-offset-2">
+                {a.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      );
+    }
+  }
+}
+
+function Card({ children, flush }: { children: ReactNode; flush?: boolean }) {
+  return <div className={cn("overflow-hidden rounded-[16px] border border-mist bg-card", !flush && "p-4")}>{children}</div>;
+}
+
+function RowView({
+  row,
+  lang,
+  live,
+  onStep,
+  muted,
+  wide,
+}: {
+  row: Row;
+  lang: Lang;
+  live?: boolean;
+  onStep?: (step: Step, label: string) => void;
+  muted?: boolean;
+  /** Rows whose time includes the date need a wider first column. */
+  wide?: boolean;
+}) {
+  const st = row.status ? STATUS[row.status] : null;
+  const end = st || row.chips?.length;
+  return (
+    <li
+      className={cn(
+        "grid items-center gap-x-3 px-4 py-2.5 text-[13.5px]",
+        wide ? "grid-cols-[1fr_auto] sm:grid-cols-[148px_1fr_auto]" : "grid-cols-[52px_1fr_auto]",
+        muted && "text-ink-2",
+      )}
+    >
+      <span className={cn("font-medium whitespace-nowrap", wide && "max-sm:col-span-2 max-sm:text-[12.5px] max-sm:text-muted")}>{row.time}</span>
+      <span className="min-w-0">
+        <span className="block truncate">{row.title}</span>
+        <span className="block truncate text-[12.5px] text-muted">
+          {row.detail}
+          {row.who ? `${lang === "ar" ? "، " : ", "}${row.who}` : ""}
+        </span>
+      </span>
+      {end ? (
+        <span className="flex shrink-0 items-center gap-1.5">
+          {st ? <Badge tone={st.tone}>{st[lang]}</Badge> : null}
+          {row.chips?.map((c) => (
+            <ChipButton key={c.label} chip={c} small disabled={!live} onClick={() => onStep?.(c.step, `${c.label}: ${row.title}, ${row.time}`)} />
+          ))}
+        </span>
+      ) : (
+        <span />
+      )}
+    </li>
   );
 }
 
-function inline(s: string) {
-  return s.split(/(\*\*[^*]+\*\*)/g).map((seg, i) => (seg.startsWith("**") && seg.endsWith("**") ? <strong key={i} className="font-semibold">{seg.slice(2, -2)}</strong> : seg));
+function ContactForm({ block, lang, onSubmit }: { block: Extract<Block, { kind: "contact" }>; lang: Lang; onSubmit: (step: BookStep, label: string) => void }) {
+  const ui = UI[lang];
+  const [name, setName] = useState(block.step.name ?? "");
+  const [phone, setPhone] = useState(block.step.phone ?? "");
+  const [msgLang, setMsgLang] = useState<Lang>(block.step.msgLang ?? lang);
+  const ok = name.trim().length >= 2 && phone.replace(/\D/g, "").length >= 7;
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!ok) return;
+        onSubmit({ ...block.step, name: name.trim(), phone: phone.trim(), msgLang }, `${name.trim()}, ${phone.trim()}`);
+      }}
+      className="grid gap-3 rounded-[16px] border border-mist bg-card p-4 sm:grid-cols-2"
+    >
+      <label className="grid gap-1 text-[12.5px] text-muted">
+        {ui.name}
+        <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" autoFocus className="h-10 text-[14.5px] text-ink" />
+      </label>
+      <label className="grid gap-1 text-[12.5px] text-muted">
+        {ui.mobile}
+        <Input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          dir="ltr"
+          inputMode="tel"
+          autoComplete="off"
+          placeholder="050 123 4567"
+          aria-invalid={block.error ? true : undefined}
+          className="h-10 text-[14.5px] text-ink"
+        />
+      </label>
+      {block.error ? <p className="text-[13px] text-rose sm:col-span-2">{block.error}</p> : null}
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
+        <div className="flex items-center gap-2 text-[12.5px] text-muted">
+          {ui.messagesIn}
+          <span className="inline-flex rounded-[9px] bg-mist-2 p-0.5">
+            {(["ar", "en"] as const).map((x) => (
+              <button
+                key={x}
+                type="button"
+                aria-pressed={msgLang === x}
+                onClick={() => setMsgLang(x)}
+                className={cn("h-7 rounded-[7px] px-2.5 text-[12.5px] transition-colors", msgLang === x ? "bg-card text-ink shadow-[0_1px_2px_rgb(15_46_53/0.12)]" : "text-ink-2")}
+              >
+                {x === "ar" ? "العربية" : "English"}
+              </button>
+            ))}
+          </span>
+        </div>
+        <Button type="submit" size="sm" disabled={!ok}>
+          {ui.next}
+        </Button>
+      </div>
+    </form>
+  );
 }
-

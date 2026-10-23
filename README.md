@@ -17,7 +17,7 @@ Open the demo clinic from the home page (no sign-up), or book a visit as a patie
 **For the front desk** (`/dashboard`)
 - **Today:** every team member side by side on a timeline with a live now-line, day totals, who is up next and visits waiting to be checked out.
 - **Bookings:** search by name or phone, filter, export CSV. Phone and walk-in bookings go through the same checks as online ones.
-- **Assistant:** a chat that looks things up ("who's free Thursday afternoon for whitening?") and books, moves or cancels. Every change waits for the owner's approval.
+- **Assistant:** quick answers from the live schedule in English or Arabic ("who's free tomorrow afternoon for a check-up?", "مين عنده مواعيد بكرة الصبح؟"), with the next steps as buttons. It books, moves or cancels, and nothing changes until the owner confirms.
 - **Messages:** the outbox of everything sent to patients, in their language.
 - **Insights:** appointments per day, busiest hours, no-show rate, where bookings came from, how full each person's week was.
 - **Services, Team & hours, Settings:** bilingual services, shifts and breaks, time off, booking rules, the booking link with a QR code.
@@ -37,7 +37,7 @@ Open the demo clinic from the home page (no sign-up), or book a visit as a patie
 | App | Next.js 16 (App Router, Cache Components, Server Actions), React 19, TypeScript |
 | Data | Postgres with Drizzle ORM. PGlite (Postgres compiled to WASM) for local dev and tests |
 | UI | Tailwind CSS 4, Schibsted Grotesk + Noto Kufi Arabic, no component library |
-| AI | AI SDK 7 through Vercel AI Gateway, tool calls with server-signed approvals |
+| Assistant | Rule-based intent matching in English and Arabic, replies built from live data. No language model, so it is instant, free to run and predictable |
 | Messaging | WhatsApp Cloud API and Resend, both optional; without keys messages are recorded as "simulated" |
 | Hosting | Vercel (cron for reminders), any Postgres (Supabase, Neon) |
 
@@ -61,7 +61,7 @@ The application checks availability first for a good error message, but correctn
 
 **The availability engine is pure.** `src/lib/availability.ts` takes hours, busy ranges and rules and returns slots. It has no database access, which keeps it fast to test.
 
-**The assistant can't act on its own.** Its tools are bound to the signed-in business. Booking, moving and cancelling use `toolApproval: 'user-approval'`, and approvals are HMAC-signed by the server so a modified client can't forge one. Writes reuse the same guarded functions as the website.
+**The assistant proposes, the owner decides.** Typed questions go through a pure, tested function (`src/lib/assistant/understand.ts`) that picks out the intent, the day ("بكرة", "next Thursday", "29/10"), the part of the day, the service, the team member, and a customer's name or phone. Each reply is computed from live data and offers the follow-ups as buttons. Booking, moving and cancelling always stop at a confirm card, and the write is a separate step that re-checks the time with the same guarded functions as the booking page, so a stale card can't double-book. Steps coming from the browser are validated with Zod and every query is scoped to the signed-in business. The operations sit behind one interface (`src/server/assistant.ts`), so a language model could later replace the matcher without touching the writes.
 
 ## Run it locally
 
@@ -73,7 +73,7 @@ npm run dev        # http://localhost:3000
 No database setup needed: without `DATABASE_URL` the app runs an embedded Postgres in `.data/pglite` and seeds the demo clinic (four months of bookings). Sign in with **Open the demo clinic**, or `demo@mawid.app` / `demo1234`.
 
 ```bash
-npm test           # 21 tests against a real Postgres engine (PGlite, in memory)
+npm test           # 33 tests, most against a real Postgres engine (PGlite, in memory)
 npm run typecheck
 npm run lint
 ```
@@ -84,7 +84,7 @@ npm run lint
 2. Add a Postgres database (Vercel Storage, Supabase or Neon). `DATABASE_URL` or `POSTGRES_URL` is picked up automatically; migrations run during the build with an advisory lock.
 3. Set `AUTH_SECRET` (random, 32+ characters) and `CRON_SECRET`.
 
-Optional: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE` for real WhatsApp delivery; `RESEND_API_KEY` and `EMAIL_FROM` for email; `MAWID_AI_MODEL` to change the assistant's model (default `anthropic/claude-haiku-4.5`).
+Optional: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE` for real WhatsApp delivery; `RESEND_API_KEY` and `EMAIL_FROM` for email.
 
 Without a database the deployment still works: it falls back to an embedded Postgres in `/tmp`, seeded with the demo, which resets when the instance does.
 
@@ -96,12 +96,13 @@ src/
     b/[slug]/            public booking page
     m/[token]/           patient's manage link
     dashboard/           the front desk (Today, Bookings, Assistant, ...)
-    api/                 booking, availability, assistant and cron routes
+    api/                 booking, availability and cron routes
   components/booking/    day strip, slot grid, ticket, booking flow
   components/dashboard/  timeline, booking sheet, insights charts, ...
   db/                    schema, SQL migrations, demo seed
   lib/                   availability engine, time zones, message templates
-  server/                bookings, notifications, reminders, assistant tools
+  lib/assistant/         reading English and Arabic questions into steps
+  server/                bookings, notifications, reminders, assistant replies
 test/                    integration tests on PGlite
 ```
 

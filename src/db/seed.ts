@@ -194,6 +194,8 @@ const BOOKING_COLS = [
 ];
 const NOTIFICATION_COLS = ["id", "business_id", "booking_id", "channel", "kind", "recipient", "body", "status", "created_at"];
 
+const overlaps = (ranges: [number, number][] | undefined, a: number, b: number) => !!ranges?.some(([x, y]) => a < y && x < b);
+
 /** One day of plausible clinic traffic, written in two batched statements. */
 async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: Date) {
   const wd = weekdayOf(date);
@@ -201,6 +203,7 @@ async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: D
   const base = APP_URL_SAFE();
   const bookingRows: unknown[][] = [];
   const noteRows: unknown[][] = [];
+  const busy = new Map<string, [number, number][]>();
   // The clinic grew: older weeks are a little quieter.
   const growth = dayOffset < 0 ? Math.max(0.55, 1 + dayOffset / 260) : 1;
   for (const s of STAFF) {
@@ -221,7 +224,12 @@ async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: D
         const startsAt = zonedToUtc(date, cursor, DEMO.tz);
         const endsAt = addMinutes(startsAt, svc.duration);
         const occupiedTo = addMinutes(endsAt, svc.bufferAfter);
-        const custIdx = Math.floor(rnd() * CUSTOMERS.length);
+        // Nobody is in two chairs at once: skip customers already booked over this time.
+        let custIdx = Math.floor(rnd() * CUSTOMERS.length);
+        for (let k = 0; k < CUSTOMERS.length && overlaps(busy.get(`${date}|${custIdx}`), cursor, cursor + svc.duration); k++) {
+          custIdx = (custIdx + 1) % CUSTOMERS.length;
+        }
+        busy.set(`${date}|${custIdx}`, [...(busy.get(`${date}|${custIdx}`) ?? []), [cursor, cursor + svc.duration]]);
         const cust = CUSTOMERS[custIdx];
         const r = rnd();
         let status: string;
