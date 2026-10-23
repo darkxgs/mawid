@@ -73,7 +73,7 @@ npm run dev        # http://localhost:3000
 No database setup needed: without `DATABASE_URL` the app runs an embedded Postgres in `.data/pglite` and seeds the demo clinic (four months of bookings). Sign in with **Open the demo clinic**, or `demo@mawid.app` / `demo1234`.
 
 ```bash
-npm test           # 33 tests, most against a real Postgres engine (PGlite, in memory)
+npm test           # unit tests, plus integration tests on a real Postgres engine (PGlite, in memory)
 npm run typecheck
 npm run lint
 ```
