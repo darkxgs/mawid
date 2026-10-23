@@ -6,7 +6,7 @@ import { requireBusiness } from "@/server/auth";
 import { getCatalog } from "@/server/catalog";
 import { getDaySchedule, getNeedsCheckout } from "@/server/dashboard";
 import { kickSweep } from "@/server/jobs";
-import { isDateStr, localDate } from "@/lib/time";
+import { isDateStr, localDate, zonedToUtc } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -22,8 +22,14 @@ async function Today({ searchParams }: PageProps<"/dashboard">) {
   await connection();
   const sp = await searchParams;
   const { db, business } = await requireBusiness();
-  const now = new Date();
+  let now = new Date();
   const today = localDate(now, business.timezone);
+  // Development only: ?at=HH:MM renders the day as it looks at that local time
+  // (used to capture product shots with the now-line in working hours).
+  if (process.env.NODE_ENV !== "production" && typeof sp.at === "string" && /^\d{2}:\d{2}$/.test(sp.at)) {
+    const [h, m] = sp.at.split(":").map(Number);
+    now = zonedToUtc(today, h * 60 + m, business.timezone);
+  }
   const date = isDateStr(sp.date) ? sp.date : today;
   const catalog = await getCatalog(db, business);
   const [schedule, checkout] = await Promise.all([

@@ -185,9 +185,9 @@ export default function Home() {
             <Image
               src="/product/dashboard-today.png"
               alt="The Today screen: a timeline of appointments for three team members, with day totals above."
-              width={2560}
-              height={1640}
-              sizes="(min-width: 1280px) 1200px, 100vw"
+              width={2880}
+              height={1800}
+              unoptimized
               className="h-auto w-full"
             />
           </div>
