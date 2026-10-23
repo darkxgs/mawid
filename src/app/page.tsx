@@ -23,7 +23,7 @@ const SAMPLE = {
   staffName: "سارة نبيل",
   startsAt: new Date("2026-10-29T12:30:00.000Z"),
   timezone: "Asia/Dubai",
-  manageUrl: "mawid.vercel.app/m/7x97qh",
+  manageUrl: "mawid-bay.vercel.app/m/7x97qh",
 };
 
 const ENGINEERING = [
@@ -40,7 +40,7 @@ export default function Home() {
       <section className="relative isolate flex min-h-[620px] flex-col overflow-hidden bg-ink text-white sm:h-[min(94svh,900px)]">
         {HERO_FILM ? (
           <video
-            className="absolute inset-0 -z-20 size-full object-cover"
+            className="absolute inset-0 -z-20 size-full object-cover object-[72%_center] lg:object-center"
             src={HERO_FILM.src}
             poster={PHOTOS.frontDesk.poster}
             autoPlay
@@ -50,7 +50,7 @@ export default function Home() {
             aria-hidden
           />
         ) : (
-          <Image src={PHOTOS.frontDesk.src} alt="" fill priority sizes="100vw" className="-z-20 object-cover" />
+          <Image src={PHOTOS.frontDesk.src} alt="" fill priority sizes="100vw" className="-z-20 object-cover object-[72%_center] lg:object-center" />
         )}
         {/* legibility scrim: darker where the type sits */}
         <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(11_33_38/0.92)_0%,rgb(11_33_38/0.55)_38%,rgb(11_33_38/0.15)_70%,rgb(11_33_38/0.35)_100%)]" />
@@ -67,7 +67,7 @@ export default function Home() {
           </nav>
         </header>
 
-        <div className="mx-auto mt-auto grid w-full max-w-7xl items-end gap-10 px-5 pb-12 sm:px-10 sm:pb-16 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="mx-auto mt-auto grid grid-cols-1 w-full max-w-7xl items-end gap-10 px-5 pb-12 sm:px-10 sm:pb-16 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="max-w-2xl">
             <h1 className="font-display text-[46px] leading-[0.98] font-semibold tracking-[-0.035em] text-balance sm:text-[76px]">
               The front desk that never closes.
@@ -93,7 +93,7 @@ export default function Home() {
       </section>
 
       {/* ---------------------------------------------------- the old way */}
-      <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-2 lg:gap-20 lg:py-32">
+      <section className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-2 lg:gap-20 lg:py-32">
         <Photo photo={PHOTOS.paperCard} sizes="(min-width: 1024px) 50vw, 100vw" className="aspect-[3/2] rounded-[6px]" />
         <div>
           <h2 className="font-display text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
@@ -102,7 +102,7 @@ export default function Home() {
           <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-2">
             Every visit is a call, a line in the book, and a reminder somebody has to remember to send. Mawid moves all three onto one link your patients already know how to use.
           </p>
-          <ol className="mt-10 grid gap-6 border-t border-ink/12 pt-8 sm:grid-cols-3">
+          <ol className="mt-10 grid grid-cols-1 gap-6 border-t border-ink/12 pt-8 sm:grid-cols-3">
             {[
               ["Share one link", "In your Instagram bio, WhatsApp profile and Google Maps."],
               ["They book in a minute", "Real free times, in Arabic or English, held while they type."],
@@ -120,7 +120,7 @@ export default function Home() {
 
       {/* ------------------------------------------------- booking page */}
       <section className="bg-saffron">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:py-28">
+        <div className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-14 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:py-28">
           <div>
             <h2 className="font-display max-w-xl text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
               A booking page patients finish, not abandon.
@@ -128,7 +128,7 @@ export default function Home() {
             <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink/80">
               It opens in Arabic, right to left, with English one tap away. Every time shown is genuinely free: hours, breaks, time off and cleaning gaps are already taken into account. Try the one on the right.
             </p>
-            <dl className="mt-10 grid max-w-xl gap-x-10 gap-y-6 sm:grid-cols-2">
+            <dl className="mt-10 grid grid-cols-1 max-w-xl gap-x-10 gap-y-6 sm:grid-cols-2">
               {[
                 ["Held while they type", "The time is reserved for five minutes so nobody else takes it mid-booking."],
                 ["Change it themselves", "Every confirmation has a link to move or cancel, inside your policy."],
@@ -147,7 +147,7 @@ export default function Home() {
       </section>
 
       {/* ---------------------------------------------------- reminders */}
-      <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20 lg:py-32">
+      <section className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20 lg:py-32">
         <div className="relative">
           <Photo photo={PHOTOS.reminder} sizes="(min-width: 1024px) 42vw, 100vw" className="aspect-[4/5] rounded-[6px]" />
           <WhatsAppBubble className="absolute -bottom-8 start-6 w-[min(300px,80%)] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.5)] sm:start-auto sm:-end-10" time="9:02">
@@ -173,7 +173,7 @@ export default function Home() {
       {/* ----------------------------------------------------- schedule */}
       <section className="bg-ink text-white">
         <div className="mx-auto max-w-7xl px-5 pt-24 sm:px-10 lg:pt-28">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
             <h2 className="font-display text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
               Every chair on one live schedule.
             </h2>
@@ -196,7 +196,7 @@ export default function Home() {
 
       {/* ------------------------------------------------- who it's for */}
       <section className="mx-auto max-w-7xl px-5 py-24 sm:px-10 lg:py-32">
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <figure>
             <Photo photo={PHOTOS.barber} sizes="(min-width: 640px) 50vw, 100vw" className="aspect-[4/5] rounded-[6px]" />
             <figcaption className="mt-3 text-[14px] text-muted">Barbers and salons: one link for every chair.</figcaption>
@@ -210,7 +210,7 @@ export default function Home() {
 
       {/* ------------------------------------------------- under the hood */}
       <section className="border-t border-ink/10 bg-paper">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <div className="mx-auto grid grid-cols-1 max-w-7xl gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div>
             <h2 className="font-display text-[30px] leading-[1.1] font-semibold tracking-[-0.03em]">Under the hood</h2>
             <p className="mt-4 max-w-sm text-[16px] leading-relaxed text-ink-2">
@@ -220,7 +220,7 @@ export default function Home() {
               Read the source
             </a>
           </div>
-          <dl className="grid gap-x-12 gap-y-8 sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
             {ENGINEERING.map(([t, b]) => (
               <div key={t} className="border-t border-ink/15 pt-4">
                 <dt className="text-[16px] font-semibold">{t}</dt>

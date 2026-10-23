@@ -2,7 +2,7 @@
 
 Online booking, WhatsApp reminders and a live schedule for clinics, salons and studios in the Gulf. Arabic first, English one tap away.
 
-**Live demo:** https://mawid-darkdis0012-gmailcoms-projects.vercel.app
+**Live demo:** https://mawid-bay.vercel.app
 Open the demo clinic from the home page (no sign-up), or book a visit as a patient at `/b/noor-dental` and watch it land on the schedule.
 
 ![Mawid landing page](docs/screenshots/landing.png)
