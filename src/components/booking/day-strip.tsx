@@ -19,6 +19,7 @@ export function DayStrip({
   loading,
   onPrev,
   onNext,
+  fit = false,
 }: {
   days: SerializedDay[];
   selected: string | null;
@@ -27,15 +28,17 @@ export function DayStrip({
   loading: boolean;
   onPrev?: () => void;
   onNext?: () => void;
+  /** Lay the given days out to fill the width exactly (no sideways scroll). */
+  fit?: boolean;
 }) {
   const t = copy(locale);
   const tag = intlTag(locale);
   const rail = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!selected || !rail.current) return;
+    if (fit || !selected || !rail.current) return;
     rail.current.querySelector<HTMLElement>(`[data-date="${selected}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
-  }, [selected]);
+  }, [selected, fit]);
 
   const placeholders = loading && !days.length;
   const items = placeholders ? Array.from({ length: 14 }, () => null) : days;
@@ -72,7 +75,8 @@ export function DayStrip({
         ref={rail}
         role="listbox"
         aria-label={t.timeTitle}
-        className="scrollbar-none -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
+        className={cn(fit ? "grid gap-1.5" : "scrollbar-none -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0")}
+        style={fit ? { gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` } : undefined}
       >
         {items.map((d, i) => {
           if (!d) {
@@ -94,17 +98,18 @@ export function DayStrip({
               disabled={disabled}
               onClick={() => onSelect(d.date)}
               className={cn(
-                "group relative flex h-[92px] w-[60px] shrink-0 snap-start flex-col items-center rounded-[14px] border pt-2.5 transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.96] active:duration-75",
+                "group relative flex flex-col items-center border transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.96] active:duration-75",
+                fit ? "h-[80px] min-w-0 rounded-[12px] pt-2" : "h-[92px] w-[60px] shrink-0 snap-start rounded-[14px] pt-2.5",
                 isSel
                   ? "border-ink bg-ink text-white"
                   : "border-mist bg-card text-ink hover:border-ink-2/40",
                 disabled && "border-transparent bg-transparent text-faint hover:border-transparent",
               )}
             >
-              <span className={cn("text-[12px]", isSel ? "text-white/70" : "text-muted", disabled && "text-faint")}>
+              <span className={cn("max-w-full truncate px-0.5", fit ? "text-[11px]" : "text-[12px]", isSel ? "text-white/70" : "text-muted", disabled && "text-faint")}>
                 {formatCalendarDate(d.date, tag, { weekday: "short" })}
               </span>
-              <span className="font-display tnum mt-0.5 text-[22px] leading-none font-semibold">
+              <span className={cn("font-display tnum mt-0.5 leading-none font-semibold", fit ? "text-[20px]" : "text-[22px]")}>
                 {formatCalendarDate(d.date, tag, { day: "numeric" })}
               </span>
               {monthStart && !isSel ? (
@@ -113,7 +118,7 @@ export function DayStrip({
               {/* booked-ness gauge */}
               <span
                 aria-hidden
-                className={cn("mt-auto mb-1.5 h-[3px] w-8 overflow-hidden rounded-full", isSel ? "bg-white/20" : "bg-mist", disabled && "opacity-0")}
+                className={cn("mt-auto mb-1.5 h-[3px] overflow-hidden rounded-full", fit ? "w-6" : "w-8", isSel ? "bg-white/20" : "bg-mist", disabled && "opacity-0")}
               >
                 <span
                   className={cn("block h-full rounded-full", isSel ? "bg-saffron" : load > 0.8 ? "bg-saffron-deep" : "bg-sea")}
@@ -122,7 +127,8 @@ export function DayStrip({
               </span>
               <span
                 className={cn(
-                  "mb-2 h-3.5 text-[11px] leading-none whitespace-nowrap",
+                  "mb-2 h-3.5 max-w-full truncate px-0.5 leading-none whitespace-nowrap",
+                  fit ? "text-[10px]" : "text-[11px]",
                   isSel ? "text-saffron" : free > 0 && free <= 3 ? "text-saffron-deep" : "text-faint",
                 )}
               >
