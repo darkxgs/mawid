@@ -21,9 +21,19 @@ async function connect(): Promise<Connection> {
     // prepare:false keeps us compatible with transaction-mode poolers
     // (Neon's -pooler host, Supabase on :6543).
     const client = postgres(url, { prepare: false, max: 5, idle_timeout: 20 });
+    const db = drizzlePg(client, { schema }) as unknown as DB;
+    // Drizzle hands date values to postgres.js as strings, so it swaps the
+    // driver's date serializers for pass-throughs. A Date that reaches the
+    // driver directly (a sql`` fragment, a raw query) would then crash it;
+    // PGlite accepts both, which is why only production would notice.
+    const serializers = client.options.serializers as Record<number, (v: unknown) => unknown>;
+    for (const oid of [1082, 1114, 1184]) {
+      const pass = serializers[oid];
+      serializers[oid] = (v) => (v instanceof Date ? v.toISOString() : pass ? pass(v) : v);
+    }
     // Production schema changes run once per deploy, in the build step
     // (scripts/migrate.ts), so cold starts never race each other.
-    return { db: drizzlePg(client, { schema }) as unknown as DB, raw: { kind: "postgres", client } };
+    return { db, raw: { kind: "postgres", client } };
   }
   // No Postgres configured: an embedded Postgres (PGlite). Locally it lives in
   // .data/; on Vercel (before a database is connected) it lives in /tmp, so a

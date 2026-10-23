@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, gte, ilike, inArray, lt, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, ilike, inArray, lt, ne, or, type SQL } from "drizzle-orm";
 import type { DB } from "@/db";
 import { getConnection } from "@/db";
 import { rawQuery } from "@/db/raw";
@@ -92,14 +92,14 @@ export async function getDaySchedule(db: DB, business: Business, catalog: Catalo
         eq(bookings.businessId, business.id),
         gte(bookings.startsAt, from),
         lt(bookings.startsAt, to),
-        or(ne(bookings.status, "held"), sql`${bookings.holdExpiresAt} > ${now}`),
+        or(ne(bookings.status, "held"), gt(bookings.holdExpiresAt, now)),
       ),
     ).orderBy(asc(bookings.startsAt)),
     staffIds.length
       ? db
           .select()
           .from(timeOff)
-          .where(and(inArray(timeOff.staffId, staffIds), lt(timeOff.startsAt, to), sql`${timeOff.endsAt} > ${from}`))
+          .where(and(inArray(timeOff.staffId, staffIds), lt(timeOff.startsAt, to), gt(timeOff.endsAt, from)))
       : Promise.resolve([]),
   ]);
 
