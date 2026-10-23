@@ -93,12 +93,12 @@ export async function getAvailability(
   db: DB,
   business: Business,
   catalog: Catalog,
-  q: { serviceId: string; staffId?: string | null; from: DateStr; days: number; now: Date; excludeBookingId?: string },
+  q: { serviceId: string; staffId?: string | null; from: DateStr; days: number; now: Date; excludeBookingId?: string; rules?: Rules },
 ) {
   const service = catalog.services.find((s) => s.id === q.serviceId);
   if (!service) throw new BookingError("not_found", "Unknown service");
   const staff = await staffInputs(db, business, catalog, service.id, q.staffId, q.from, q.days, q.now, q.excludeBookingId);
-  return computeRange({ from: q.from, days: q.days, rules: rulesOf(business), service, staff, now: q.now });
+  return computeRange({ from: q.from, days: q.days, rules: q.rules ?? rulesOf(business), service, staff, now: q.now });
 }
 
 /** Re-check one start time against live data and choose who does it. */

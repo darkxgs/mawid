@@ -55,3 +55,16 @@ export function formatDuration(min: number, l: Locale) {
 
 /** Pick the Arabic or English variant of a bilingual DB field. */
 export const pick = (l: Locale, en: string, ar?: string | null) => (l === "ar" && ar ? ar : en);
+
+/**
+ * English dates for the dashboard, assembled from parts. Node and browsers
+ * ship different ICU data ("Sept" vs "Sep", "Fri 23 Oct" vs "Fri, 23 Oct"),
+ * and any difference breaks hydration, so punctuation is ours, not ICU's.
+ */
+export function enDate(d: Date | string, opts: Intl.DateTimeFormatOptions, tz = "UTC") {
+  const dateOnly = typeof d === "string" && d.length === 10;
+  const date = typeof d === "string" ? new Date(dateOnly ? `${d}T12:00:00Z` : d) : d;
+  const parts = new Intl.DateTimeFormat("en-GB", { ...opts, timeZone: dateOnly ? "UTC" : tz }).formatToParts(date);
+  const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value;
+  return [get("weekday"), get("day"), get("month")?.replace(/^Sept$/, "Sep"), get("year")].filter(Boolean).join(" ");
+}

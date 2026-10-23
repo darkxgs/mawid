@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { ComponentProps, ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 export const cn = (...v: ClassValue[]) => twMerge(clsx(v));
 
@@ -48,7 +49,12 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {
-  return <select className={cn(fieldBase, "h-11 appearance-none bg-[length:16px] pe-9", className)} {...props} />;
+  return (
+    <span className="relative block">
+      <select className={cn(fieldBase, "h-11 appearance-none pe-9", className)} {...props} />
+      <ChevronDown aria-hidden className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+    </span>
+  );
 }
 
 export function Field({
@@ -65,7 +71,7 @@ export function Field({
   htmlFor?: string;
 }) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid content-start gap-1.5">
       <label htmlFor={htmlFor} className="text-[13px] font-medium text-ink-2">
         {label}
       </label>

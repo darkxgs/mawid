@@ -160,10 +160,10 @@ async function seedStatic(t: MigrationTarget) {
   }
 }
 
-/** Fill every empty day from 28 days ago to 12 days ahead with bookings. */
+/** Fill every empty day from four months ago to 12 days ahead with bookings. */
 export async function topUpDemoBookings(t: MigrationTarget, now = new Date()) {
   const today = localDate(now, DEMO.tz);
-  const from = addDays(today, -28);
+  const from = addDays(today, -120);
   const to = addDays(today, 12);
   const rows = await rawQuery<{ d: string }>(
     t,
@@ -177,15 +177,33 @@ export async function topUpDemoBookings(t: MigrationTarget, now = new Date()) {
   }
 }
 
+async function insertMany(t: MigrationTarget, table: string, columns: string[], rows: unknown[][]) {
+  if (!rows.length) return;
+  const params: unknown[] = [];
+  const values = rows.map((r) => `(${r.map((v) => (params.push(v), `$${params.length}`)).join(",")})`);
+  await rawQuery(t, `INSERT INTO ${table} (${columns.join(",")}) VALUES ${values.join(",")}`, params);
+}
+
+const BOOKING_COLS = [
+  "id", "business_id", "service_id", "staff_id", "customer_id", "starts_at", "ends_at", "occupied_from", "occupied_to", "status", "source",
+  "price_minor", "manage_token", "locale", "created_at", "cancelled_at", "reminder_24_sent_at", "reminder_2_sent_at",
+];
+const NOTIFICATION_COLS = ["id", "business_id", "booking_id", "channel", "kind", "recipient", "body", "status", "created_at"];
+
+/** One day of plausible clinic traffic, written in two batched statements. */
 async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: Date) {
   const wd = weekdayOf(date);
   const dayOffset = (Date.parse(date) - Date.parse(today)) / 86_400_000;
   const base = APP_URL_SAFE();
+  const bookingRows: unknown[][] = [];
+  const noteRows: unknown[][] = [];
+  // The clinic grew: older weeks are a little quieter.
+  const growth = dayOffset < 0 ? Math.max(0.55, 1 + dayOffset / 260) : 1;
   for (const s of STAFF) {
     const ranges = s.hours[wd];
     if (!ranges) continue;
     const rnd = mulberry32(hashStr(date + s.id));
-    const fill = dayOffset <= 0 ? 0.78 : Math.max(0.18, 0.72 - dayOffset * 0.05);
+    const fill = dayOffset <= 0 ? 0.78 * growth : Math.max(0.18, 0.72 - dayOffset * 0.05);
     for (const [a, b] of ranges) {
       let cursor = a;
       while (cursor + 20 <= b) {
@@ -206,23 +224,23 @@ async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: D
         if (endsAt < now) status = r < 0.05 ? "no_show" : r < 0.12 ? "cancelled" : "completed";
         else status = r < 0.06 ? "cancelled" : "confirmed";
         const src = rnd();
-        const source = src < 0.68 ? "web" : src < 0.88 ? "dashboard" : "assistant";
+        // Online share rises over time, as it does once a booking link is shared around.
+        const onlineShare = dayOffset < -60 ? 0.52 : 0.68;
+        const source = src < onlineShare ? "web" : src < onlineShare + 0.2 ? "dashboard" : "assistant";
         const id = newId("bk");
         const token = newToken();
-        const createdAt = addMinutes(startsAt, -60 * 24 * (1 + Math.floor(rnd() * 6)) - Math.floor(rnd() * 600));
-        await rawQuery(
-          t,
-          `INSERT INTO bookings (id, business_id, service_id, staff_id, customer_id, starts_at, ends_at, occupied_from, occupied_to, status, source, price_minor, manage_token, locale, created_at, cancelled_at, reminder_24_sent_at, reminder_2_sent_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$6,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
-          [
-            id, DEMO.businessId, svc.id, s.id, `cus_demo_${custIdx}`,
-            startsAt.toISOString(), endsAt.toISOString(), occupiedTo.toISOString(), status, source, svc.price * 100, token, cust.locale,
-            createdAt.toISOString(),
-            status === "cancelled" ? addMinutes(startsAt, -60 * 20).toISOString() : null,
-            endsAt < now && status !== "cancelled" ? addMinutes(startsAt, -60 * 24).toISOString() : null,
-            endsAt < now && status !== "cancelled" ? addMinutes(startsAt, -120).toISOString() : null,
-          ],
-        );
+        let createdAt = addMinutes(startsAt, -60 * 24 * (1 + Math.floor(rnd() * 6)) - Math.floor(rnd() * 600));
+        // Upcoming visits were booked in the past, never "later today".
+        if (createdAt > now) createdAt = addMinutes(now, -30 - Math.floor(rnd() * 60 * 48));
+        const past = endsAt < now && status !== "cancelled";
+        bookingRows.push([
+          id, DEMO.businessId, svc.id, s.id, `cus_demo_${custIdx}`,
+          startsAt.toISOString(), endsAt.toISOString(), startsAt.toISOString(), occupiedTo.toISOString(), status, source, svc.price * 100, token, cust.locale,
+          createdAt.toISOString(),
+          status === "cancelled" ? addMinutes(startsAt, -60 * 20).toISOString() : null,
+          past ? addMinutes(startsAt, -60 * 24).toISOString() : null,
+          past ? addMinutes(startsAt, -120).toISOString() : null,
+        ]);
         // A realistic message trail for the "Messages" screen.
         if (Math.abs(dayOffset) <= 3) {
           const data = {
@@ -236,15 +254,10 @@ async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: D
           };
           const phone = `+97150000${String(1000 + custIdx).slice(-4)}`;
           const msgs: [string, Date][] = [["confirmation", createdAt]];
-          if (endsAt < now && status !== "cancelled") msgs.push(["reminder_24h", addMinutes(startsAt, -60 * 24)]);
+          if (past) msgs.push(["reminder_24h", addMinutes(startsAt, -60 * 24)]);
           if (status === "cancelled") msgs.push(["cancellation", addMinutes(startsAt, -60 * 20)]);
           for (const [kind, at] of msgs) {
-            await rawQuery(
-              t,
-              `INSERT INTO notifications (id, business_id, booking_id, channel, kind, recipient, body, status, created_at)
-               VALUES ($1,$2,$3,'whatsapp',$4,$5,$6,'simulated',$7)`,
-              [newId("ntf"), DEMO.businessId, id, kind, phone, renderMessage(kind as never, cust.locale, data), at.toISOString()],
-            );
+            noteRows.push([newId("ntf"), DEMO.businessId, id, "whatsapp", kind, phone, renderMessage(kind as never, cust.locale, data), "simulated", at.toISOString()]);
           }
         }
         cursor += svc.duration + svc.bufferAfter;
@@ -252,6 +265,8 @@ async function seedDay(t: MigrationTarget, date: DateStr, today: DateStr, now: D
       }
     }
   }
+  await insertMany(t, "bookings", BOOKING_COLS, bookingRows);
+  await insertMany(t, "notifications", NOTIFICATION_COLS, noteRows);
 }
 
 function APP_URL_SAFE() {
