@@ -40,7 +40,7 @@ export function TodayView({ schedule, checkout, business, services, team, welcom
     <div className="px-4 py-6 sm:px-8 sm:py-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="font-display text-[26px] leading-tight font-medium sm:text-[28px]">{label}</h1>
+          <h1 className="font-display text-[26px] leading-tight font-semibold sm:text-[28px]">{label}</h1>
           {isToday ? <span className="rounded-full bg-sea-soft px-2.5 py-0.5 text-[12px] font-medium text-sea-deep">Today</span> : null}
         </div>
         <div className="flex items-center gap-2">
@@ -421,7 +421,7 @@ function Welcome({ slug }: { slug: string }) {
   const url = `${origin}/b/${slug}`;
   return (
     <div className="mt-6 rounded-panel border border-sea/20 bg-sea-soft p-5">
-      <p className="font-display text-[18px] font-medium text-sea-deep">Your booking page is live</p>
+      <p className="font-display text-[18px] font-semibold text-sea-deep">Your booking page is live</p>
       <p className="mt-1 max-w-2xl text-[14px] leading-relaxed text-ink-2">
         We added you as the first team member with standard hours and one starter service. Rename the service, set your real hours, then share this link
         on WhatsApp, Instagram and Google Maps.

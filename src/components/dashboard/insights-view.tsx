@@ -64,14 +64,14 @@ export function InsightsView({ data, currency, weekStart }: { data: Insights; cu
           <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-mist pt-5 text-[13.5px]">
             <div>
               <dt className="text-muted">Typical notice</dt>
-              <dd className="font-display tnum mt-1 text-[20px] font-medium">
+              <dd className="font-display tnum mt-1 text-[20px] font-semibold">
                 {data.medianLeadHours >= 48 ? `${Math.round(data.medianLeadHours / 24)} days` : `${Math.round(data.medianLeadHours)} h`}
               </dd>
               <dd className="text-[12.5px] text-muted">between booking and visit</dd>
             </div>
             <div>
               <dt className="text-muted">Returning customers</dt>
-              <dd className="font-display tnum mt-1 text-[20px] font-medium">{pct(data.returningShare)}</dd>
+              <dd className="font-display tnum mt-1 text-[20px] font-semibold">{pct(data.returningShare)}</dd>
               <dd className="text-[12.5px] text-muted">had been before</dd>
             </div>
           </dl>
@@ -139,7 +139,7 @@ function Tile({
   return (
     <div className="min-w-0 px-5 py-4">
       <p className="text-[13px] text-muted">{label}</p>
-      <p className="tnum mt-1 text-[26px] leading-none font-semibold">{value}</p>
+      <p className="mt-1 text-[26px] leading-none font-semibold">{value}</p>
       <p className="mt-2 text-[12.5px]">
         {text ? (
           <>

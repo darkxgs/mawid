@@ -21,16 +21,38 @@ export function zonedToUtc(date: DateStr, minutes: number, tz: string): Date {
   return new Date(new TZDate(y, m - 1, day, h, min, tz).getTime());
 }
 
+// Wall-clock parts of an instant in a time zone, via Intl. Pure (never reads
+// the current time), so it is safe in components that prerender.
+const partFormatters = new Map<string, Intl.DateTimeFormat>();
+function wallClock(instant: Date, tz: string) {
+  let f = partFormatters.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    partFormatters.set(tz, f);
+  }
+  const p: Record<string, string> = {};
+  for (const x of f.formatToParts(instant)) p[x.type] = x.value;
+  return { y: Number(p.year), m: Number(p.month), d: Number(p.day), h: Number(p.hour) % 24, min: Number(p.minute) };
+}
+
 /** Local calendar date of an instant in `tz`. */
 export function localDate(instant: Date, tz: string): DateStr {
-  const z = new TZDate(instant.getTime(), tz);
-  return `${z.getFullYear()}-${pad(z.getMonth() + 1)}-${pad(z.getDate())}`;
+  const w = wallClock(instant, tz);
+  return `${w.y}-${pad(w.m)}-${pad(w.d)}`;
 }
 
 /** Minutes past local midnight of an instant in `tz`. */
 export function localMinutes(instant: Date, tz: string): number {
-  const z = new TZDate(instant.getTime(), tz);
-  return z.getHours() * 60 + z.getMinutes();
+  const w = wallClock(instant, tz);
+  return w.h * 60 + w.min;
 }
 
 /** 0 = Sunday ... 6 = Saturday, for a calendar date. */

@@ -23,11 +23,12 @@
   --color-rose: #b9473d;
   --color-rose-soft: #f8e5e2;
 
-  --font-sans: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Readex Pro Variable", "IBM Plex Sans Arabic", ui-sans-serif, sans-serif;
+  --font-sans: "Schibsted Grotesk Variable", "Noto Kufi Arabic Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Schibsted Grotesk Variable", "Noto Kufi Arabic Variable", ui-sans-serif, sans-serif;
+  --font-kufi: "Noto Kufi Arabic Variable", ui-sans-serif, sans-serif;
 
-  --radius-panel: 18px;
-  --radius-control: 10px;
+  --radius-panel: 10px;
+  --radius-control: 8px;
 
   --shadow-lift: 0 1px 0 rgb(15 46 53 / 0.04), 0 12px 32px -18px rgb(15 46 53 / 0.35);
   --shadow-pop: 0 24px 60px -28px rgb(15 46 53 / 0.55);
@@ -65,7 +66,6 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01";
   text-rendering: optimizeLegibility;
 }
 
@@ -84,13 +84,23 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.font-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.015em;
-}
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.022em;
+  }
 
-[dir="rtl"] .font-display {
-  letter-spacing: 0;
+  /* Arabic is never tracked; Kufi wants a touch more line height. */
+  [dir="rtl"] .font-display,
+  :lang(ar) .font-display {
+    letter-spacing: 0;
+    line-height: 1.35;
+  }
+
+  .font-kufi {
+    font-family: var(--font-kufi);
+    letter-spacing: 0;
+  }
 }
 
 .scrollbar-none {
@@ -158,7 +168,18 @@ dialog.overlay[data-variant="modal"]:not([open]) .overlay-panel {
   }
 }
 
+.glass-dark {
+  background: rgb(11 33 38 / 0.38);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+}
+
 @media (prefers-reduced-transparency: reduce) {
+  .glass-dark {
+    background: rgb(11 33 38 / 0.85);
+    backdrop-filter: none;
+  }
   .glass {
     background: var(--color-paper);
     backdrop-filter: none;

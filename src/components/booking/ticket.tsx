@@ -110,7 +110,7 @@ export function Ticket({
           </div>
           <p
             className={cn(
-              "font-display mt-2 text-[24px] leading-tight font-medium text-balance",
+              "font-display mt-2 text-[24px] leading-tight font-semibold text-balance",
               !service && "text-white/35",
             )}
           >

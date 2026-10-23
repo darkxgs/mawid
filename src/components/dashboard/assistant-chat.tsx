@@ -51,7 +51,7 @@ export function AssistantChat({ businessName }: { businessName: string }) {
     <div className="flex h-[calc(100dvh-37px)] flex-col max-lg:h-[calc(100dvh-140px)]">
       <div className="flex items-center justify-between gap-4 border-b border-mist px-4 py-4 sm:px-8">
         <div>
-          <h1 className="font-display text-[22px] leading-tight font-medium">Assistant</h1>
+          <h1 className="font-display text-[22px] leading-tight font-semibold">Assistant</h1>
           <p className="text-[13.5px] text-muted">Ask about the diary, find free times, book, move or cancel. You approve every change.</p>
         </div>
         {messages.length ? (
@@ -65,7 +65,7 @@ export function AssistantChat({ businessName }: { businessName: string }) {
         <div className="mx-auto grid max-w-3xl gap-6 px-4 py-6 sm:px-8">
           {!messages.length ? (
             <div className="pt-6">
-              <p className="font-display text-[24px] leading-snug font-medium text-balance">What do you need at {businessName} today?</p>
+              <p className="font-display text-[24px] leading-snug font-semibold text-balance">What do you need at {businessName} today?</p>
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
                 {SUGGESTIONS.map((s) => (
                   <button

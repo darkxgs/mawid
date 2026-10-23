@@ -1,15 +1,9 @@
 import type { Metadata, Viewport } from "next";
-// Self-hosted (no build-time call to Google Fonts). Only the Arabic and Latin
-// subsets ship; browsers download a file only when its unicode-range is used.
-import "@fontsource/ibm-plex-sans-arabic/arabic-400.css";
-import "@fontsource/ibm-plex-sans-arabic/arabic-500.css";
-import "@fontsource/ibm-plex-sans-arabic/arabic-600.css";
-import "@fontsource/ibm-plex-sans-arabic/arabic-700.css";
-import "@fontsource/ibm-plex-sans-arabic/latin-400.css";
-import "@fontsource/ibm-plex-sans-arabic/latin-500.css";
-import "@fontsource/ibm-plex-sans-arabic/latin-600.css";
-import "@fontsource/ibm-plex-sans-arabic/latin-700.css";
-import "@fontsource-variable/readex-pro/index.css";
+// Self-hosted (no build-time call to Google Fonts). Schibsted Grotesk sets
+// Latin; Arabic falls through to Noto Kufi Arabic, the modern Kufi that Gulf
+// signage and government apps use. Browsers only fetch the subsets a page uses.
+import "@fontsource-variable/schibsted-grotesk/index.css";
+import "@fontsource-variable/noto-kufi-arabic/index.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

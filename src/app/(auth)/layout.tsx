@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
       <aside className="relative hidden overflow-hidden bg-ink lg:block">
         <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_80%_0%,#1d6b66_0%,transparent_60%)] opacity-70" />
         <div className="relative flex h-full flex-col justify-center px-14 py-16 xl:px-20">
-          <p className="font-display max-w-md text-[34px] leading-[1.15] font-medium text-white text-balance">
+          <p className="font-display max-w-md text-[34px] leading-[1.15] font-semibold text-white text-balance">
             Your patients book on WhatsApp time, not office hours.
           </p>
           <p className="mt-4 max-w-md text-[16px] leading-relaxed text-white/65">

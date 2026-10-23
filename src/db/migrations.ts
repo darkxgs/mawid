@@ -180,4 +180,12 @@ CREATE INDEX bookings_reminder_idx ON bookings(starts_at)
   WHERE status = 'confirmed' AND (reminder_24_sent_at IS NULL OR reminder_2_sent_at IS NULL);
 `,
   },
+  {
+    name: "0003_cover",
+    sql: /* sql */ `
+ALTER TABLE businesses ADD COLUMN cover_url text;
+UPDATE businesses SET cover_url = 'https://d8j0ntlcm91z4.cloudfront.net/user_3KEzB9B3k7k7KvaEiefqwv7OPXv/hf_20261023_012831_1a8a057d-68f8-4141-9394-43f74c301ff3.png'
+  WHERE id = 'biz_demo';
+`,
+  },
 ];

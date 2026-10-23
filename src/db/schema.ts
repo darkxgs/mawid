@@ -32,6 +32,7 @@ export const businesses = pgTable("businesses", {
   address: text("address"),
   addressAr: text("address_ar"),
   phone: text("phone"),
+  coverUrl: text("cover_url"),
   timezone: text("timezone").notNull().default("Asia/Dubai"),
   currency: text("currency").notNull().default("AED"),
   defaultLocale: text("default_locale").notNull().default("ar"),

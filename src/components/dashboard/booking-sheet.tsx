@@ -143,7 +143,7 @@ export function BookingSheet({
       {b && start_ ? (
         <div className="grid gap-6">
           <section>
-            <p className="font-display text-[22px] leading-tight font-medium">{b.service.name}</p>
+            <p className="font-display text-[22px] leading-tight font-semibold">{b.service.name}</p>
             <p className="tnum mt-1 text-[15px] text-ink-2">
               {formatDateLong(start_, tz, "en")}, {formatTime(start_, tz, "en")} to {formatTime(new Date(b.endsAt), tz, "en")}
             </p>
@@ -178,7 +178,7 @@ export function BookingSheet({
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[14px]">
             <div>
               <dt className="text-[13px] text-muted">Price</dt>
-              <dd className="tnum mt-0.5">{formatMoney(b.priceMinor, currency, "en")}</dd>
+              <dd className="mt-0.5">{formatMoney(b.priceMinor, currency, "en")}</dd>
             </div>
             <div>
               <dt className="text-[13px] text-muted">Length</dt>

@@ -148,7 +148,7 @@ export function MessagesView({
         <aside className="grid content-start gap-4">
           <section className="rounded-panel border border-mist bg-card p-5">
             <p className="text-[14px] font-medium">Last 7 days</p>
-            <p className="font-display tnum mt-2 text-[28px] leading-none font-medium">{weekTotal}</p>
+            <p className="font-display tnum mt-2 text-[28px] leading-none font-semibold">{weekTotal}</p>
             <p className="mt-1 text-[13px] text-muted">messages</p>
             <dl className="mt-4 grid gap-2 text-[13.5px]">
               <div className="flex justify-between">

@@ -43,7 +43,7 @@ export function DayStrip({
   return (
     <div className="relative">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="font-display text-[15px] font-medium text-ink">
+        <p className="font-display text-[15px] font-semibold text-ink">
           {days[0] ? formatCalendarDate(days[0].date, tag, { month: "long", year: "numeric" }) : " "}
         </p>
         <div className="flex gap-1">
@@ -104,7 +104,7 @@ export function DayStrip({
               <span className={cn("text-[12px]", isSel ? "text-white/70" : "text-muted", disabled && "text-faint")}>
                 {formatCalendarDate(d.date, tag, { weekday: "short" })}
               </span>
-              <span className="font-display tnum mt-0.5 text-[22px] leading-none font-medium">
+              <span className="font-display tnum mt-0.5 text-[22px] leading-none font-semibold">
                 {formatCalendarDate(d.date, tag, { day: "numeric" })}
               </span>
               {monthStart && !isSel ? (

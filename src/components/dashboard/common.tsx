@@ -27,7 +27,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="font-display text-[26px] leading-tight font-medium sm:text-[28px]">{title}</h1>
+        <h1 className="font-display text-[26px] leading-tight font-semibold sm:text-[28px]">{title}</h1>
         {description ? <p className="mt-1 max-w-2xl text-[14px] leading-relaxed text-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -87,7 +87,7 @@ export function Overlay({
         )}
       >
         <div className="flex items-center justify-between gap-4 border-b border-mist px-5 py-4 sm:px-6">
-          <div className="font-display min-w-0 text-[18px] font-medium">{title}</div>
+          <div className="font-display min-w-0 text-[18px] font-semibold">{title}</div>
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-mist-2 hover:text-ink">
             <X className="size-4" />
           </button>
@@ -103,7 +103,7 @@ export function Stat({ label, value, hint, children }: { label: string; value: R
   return (
     <div className="min-w-0 px-5 py-4">
       <p className="text-[13px] text-muted">{label}</p>
-      <p className="font-display tnum mt-1 text-[24px] leading-none font-medium">{value}</p>
+      <p className="font-display mt-1 text-[24px] leading-none font-semibold">{value}</p>
       {hint ? <p className="mt-1.5 truncate text-[12.5px] text-muted">{hint}</p> : null}
       {children}
     </div>
@@ -113,7 +113,7 @@ export function Stat({ label, value, hint, children }: { label: string; value: R
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="rounded-panel border border-dashed border-mist px-6 py-12 text-center">
-      <p className="font-display text-[17px] font-medium">{title}</p>
+      <p className="font-display text-[17px] font-semibold">{title}</p>
       {children ? <div className="mx-auto mt-1.5 max-w-sm text-[14px] leading-relaxed text-muted">{children}</div> : null}
       {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>

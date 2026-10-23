@@ -8,6 +8,7 @@ import { newId, newToken } from "@/lib/id";
 import { addDays, addMinutes, localDate, weekdayOf, zonedToUtc, type DateStr } from "@/lib/time";
 import { renderMessage, appUrl } from "@/lib/messages";
 import type { Locale } from "@/lib/format";
+import { PHOTOS } from "@/lib/media";
 
 export const DEMO = {
   userId: "usr_demo",
@@ -118,12 +119,12 @@ async function seedStatic(t: MigrationTarget) {
   ]);
   await rawQuery(
     t,
-    `INSERT INTO businesses (id, owner_id, slug, name, name_ar, kind, tagline, tagline_ar, address, address_ar, phone, timezone, currency, default_locale, slot_interval_min, min_notice_min, max_advance_days)
-     VALUES ($1,$2,$3,$4,$5,'clinic',$6,$7,$8,$9,$10,$11,'AED','ar',15,60,30)`,
+    `INSERT INTO businesses (id, owner_id, slug, name, name_ar, kind, tagline, tagline_ar, address, address_ar, phone, timezone, currency, default_locale, slot_interval_min, min_notice_min, max_advance_days, cover_url)
+     VALUES ($1,$2,$3,$4,$5,'clinic',$6,$7,$8,$9,$10,$11,'AED','ar',15,60,30,$12)`,
     [
       DEMO.businessId, DEMO.userId, DEMO.slug, "Noor Dental Clinic", "عيادة نور لطب الأسنان",
       "Family dentistry in Jumeirah", "طب أسنان للعائلة في جميرا",
-      "Al Wasl Road, Jumeirah 1, Dubai", "شارع الوصل، جميرا 1، دبي", "+971 4 000 0000", DEMO.tz,
+      "Al Wasl Road, Jumeirah 1, Dubai", "شارع الوصل، جميرا 1، دبي", "+971 4 000 0000", DEMO.tz, PHOTOS.treatmentRoom.src,
     ],
   );
   for (const [i, s] of SERVICES.entries()) {

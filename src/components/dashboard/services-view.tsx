@@ -49,7 +49,7 @@ export function ServicesView({ services, team, currency, slug }: { services: Svc
             <li key={s.id} className={cn("grid items-center gap-x-6 gap-y-2 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_120px_110px_auto]", !s.active && "bg-paper/60")}>
               <button type="button" onClick={() => setEditing(s)} className="min-w-0 text-start">
                 <span className="flex items-center gap-2">
-                  <span className="font-display truncate text-[16px] font-medium hover:text-sea">{s.name}</span>
+                  <span className="font-display truncate text-[16px] font-semibold hover:text-sea">{s.name}</span>
                   {!s.active ? <Badge>Hidden</Badge> : null}
                 </span>
                 <span className="mt-0.5 block truncate text-[13.5px] text-muted">
@@ -60,7 +60,7 @@ export function ServicesView({ services, team, currency, slug }: { services: Svc
                 {formatDuration(s.durationMin, "en")}
                 {s.bufferAfterMin ? <span className="block text-[12.5px] text-muted">+{s.bufferAfterMin} min gap</span> : null}
               </span>
-              <span className="tnum text-[14px]">{s.priceMinor ? formatMoney(s.priceMinor, currency, "en") : "Free"}</span>
+              <span className="text-[14px]">{s.priceMinor ? formatMoney(s.priceMinor, currency, "en") : "Free"}</span>
               <span className="flex items-center gap-3 sm:justify-end">
                 <span className="flex gap-1">
                   {s.staffIds.length ? (

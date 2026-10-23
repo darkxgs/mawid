@@ -1,12 +1,14 @@
 "use client";
 
 import { Check, CalendarPlus, MapPin, Phone, RotateCcw, Settings2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { Avatar, Button, Field, Input, Spinner, Textarea, buttonClass, cn } from "@/components/ui";
 import { copy, type Copy } from "@/lib/copy";
 import { formatDateShort, formatDuration, formatMoney, formatTime, intlTag, pick, type Locale } from "@/lib/format";
 import { buildIcs, downloadIcs, googleCalendarUrl } from "@/lib/ics";
+import { isOptimizable } from "@/lib/media";
 import { currencyCountry, dialCode, formatPhone, normalizePhone } from "@/lib/phone";
 import { addDays, addMinutes, daysBetween } from "@/lib/time";
 import { DayStrip } from "./day-strip";
@@ -222,7 +224,7 @@ export function BookingFlow({
 
             {step === "time" && service ? (
               <section className="mt-7" aria-labelledby="time-title">
-                <h1 id="time-title" className="font-display text-[26px] leading-tight font-medium sm:text-[30px]">
+                <h1 id="time-title" className="font-display text-[26px] leading-tight font-semibold sm:text-[30px]">
                   {t.timeTitle}
                 </h1>
 
@@ -362,18 +364,53 @@ function LiveTicket({ holdUntil, ...props }: TicketProps & { holdUntil?: number 
 export function BusinessHeader({ business, locale, t, onSwitch }: { business: PublicBusiness; locale: Locale; t: Copy; onSwitch: () => void }) {
   const name = pick(locale, business.name, business.nameAr);
   const address = pick(locale, business.address ?? "", business.addressAr);
+  const tagline = pick(locale, business.tagline ?? "", business.taglineAr);
+  const toggle = (
+    <button
+      type="button"
+      onClick={onSwitch}
+      aria-label={t.langSwitchLabel}
+      lang={locale === "ar" ? "en" : "ar"}
+      className={cn(
+        "h-9 shrink-0 rounded-full px-4 text-[13.5px] font-medium transition-[background-color,transform] active:scale-[0.97]",
+        business.coverUrl ? "glass-dark text-white" : "border border-mist bg-card text-ink hover:bg-mist-2",
+      )}
+    >
+      {t.langSwitch}
+    </button>
+  );
   return (
-    <header className="mx-auto flex max-w-6xl items-start gap-4 px-4 pt-6 pb-2 sm:px-6 sm:pt-8">
-      <span
-        aria-hidden
-        className="font-display grid size-12 shrink-0 place-items-center rounded-[14px] bg-sea-deep text-[22px] font-semibold text-white shadow-lift"
-      >
-        {business.name.trim()[0]}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="font-display truncate text-[18px] leading-tight font-medium sm:text-[20px]">{name}</p>
-        <p className="mt-0.5 truncate text-[14px] text-muted">{pick(locale, business.tagline ?? "", business.taglineAr)}</p>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-ink-2">
+    <header>
+      {business.coverUrl ? (
+        <div className="relative h-36 overflow-hidden bg-[#d9d4cb] sm:h-52">
+          <Image
+            src={business.coverUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            unoptimized={!isOptimizable(business.coverUrl)}
+            className="object-cover"
+          />
+          <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(11_33_38/0.35),transparent_45%)]" />
+          <div className="absolute inset-x-0 top-0 mx-auto flex max-w-6xl justify-end px-4 pt-4 sm:px-6">{toggle}</div>
+        </div>
+      ) : null}
+      <div className={cn("mx-auto flex max-w-6xl items-end gap-4 px-4 sm:px-6", business.coverUrl ? "-mt-7" : "pt-6")}>
+        <span
+          aria-hidden
+          className="font-display relative grid size-16 shrink-0 place-items-center rounded-[12px] bg-sea-deep text-[26px] font-bold text-white ring-4 ring-paper"
+        >
+          {business.name.trim()[0]}
+        </span>
+        <div className="min-w-0 flex-1 pb-0.5">
+          <p className="font-display truncate text-[20px] leading-tight font-semibold sm:text-[24px]">{name}</p>
+          {tagline ? <p className="truncate text-[14px] text-muted">{tagline}</p> : null}
+        </div>
+        {business.coverUrl ? null : toggle}
+      </div>
+      {address || business.phone ? (
+        <div className="mx-auto mt-3 flex max-w-6xl flex-wrap gap-x-5 gap-y-1 px-4 text-[13px] text-ink-2 sm:px-6">
           {address ? (
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address ?? address)}`}
@@ -392,16 +429,7 @@ export function BusinessHeader({ business, locale, t, onSwitch }: { business: Pu
             </a>
           ) : null}
         </div>
-      </div>
-      <button
-        type="button"
-        onClick={onSwitch}
-        aria-label={t.langSwitchLabel}
-        lang={locale === "ar" ? "en" : "ar"}
-        className={buttonClass("outline", "sm", "shrink-0 rounded-full px-3.5")}
-      >
-        {t.langSwitch}
-      </button>
+      ) : null}
     </header>
   );
 }
@@ -464,7 +492,7 @@ function ServiceStep({
 }) {
   return (
     <section className="mt-7" aria-labelledby="service-title">
-      <h1 id="service-title" className="font-display text-[26px] leading-tight font-medium sm:text-[30px]">
+      <h1 id="service-title" className="font-display text-[26px] leading-tight font-semibold sm:text-[30px]">
         {t.serviceTitle}
       </h1>
       <ul className="mt-6 divide-y divide-mist overflow-hidden rounded-panel border border-mist bg-card">
@@ -482,10 +510,10 @@ function ServiceStep({
                   isSel ? "bg-sea-soft" : "hover:bg-mist-2/60",
                 )}
               >
-                <span className="font-display text-[17px] leading-snug font-medium text-ink">
+                <span className="font-display text-[17px] leading-snug font-semibold text-ink">
                   {pick(locale, s.name, s.nameAr)}
                 </span>
-                <span className="tnum text-[15px] font-medium text-ink">{formatMoney(s.priceMinor, business.currency, locale)}</span>
+                <span className="text-[15px] font-medium text-ink">{formatMoney(s.priceMinor, business.currency, locale)}</span>
                 <span className="text-[14px] leading-relaxed text-muted">{pick(locale, s.description ?? "", s.descriptionAr)}</span>
                 <span className="tnum text-end text-[13px] whitespace-nowrap text-muted">{formatDuration(s.durationMin, locale)}</span>
                 <span className="col-span-2 mt-2 flex items-center gap-2">
@@ -630,7 +658,7 @@ function DetailsStep({
       <div className="lg:hidden">
         <LiveTicket {...ticket} holdUntil={hold.expiresAt} />
       </div>
-      <h1 id="details-title" className="font-display mt-8 text-[26px] leading-tight font-medium sm:text-[30px] lg:mt-0">
+      <h1 id="details-title" className="font-display mt-8 text-[26px] leading-tight font-semibold sm:text-[30px] lg:mt-0">
         {t.detailsTitle}
       </h1>
       <form onSubmit={submit} noValidate className="mt-6 grid max-w-xl gap-5">
@@ -725,7 +753,7 @@ function DoneView({
   return (
     <main className="mx-auto max-w-md px-4 pt-8 pb-16 sm:pt-12">
       <div className="animate-rise">
-        <h1 className="font-display text-[30px] leading-tight font-medium">{t.done.title}</h1>
+        <h1 className="font-display text-[30px] leading-tight font-semibold">{t.done.title}</h1>
         <p className="mt-2 text-[15px] text-ink-2">
           {t.done.sentTo}{" "}
           <bdi dir="ltr" className="tnum font-medium whitespace-nowrap text-ink">

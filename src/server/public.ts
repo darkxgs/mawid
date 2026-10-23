@@ -16,6 +16,7 @@ export function publicBusiness(b: Business, catalog: Catalog) {
     address: b.address,
     addressAr: b.addressAr,
     phone: b.phone,
+    coverUrl: b.coverUrl,
     timezone: b.timezone,
     currency: b.currency,
     defaultLocale: (b.defaultLocale === "en" ? "en" : "ar") as "ar" | "en",

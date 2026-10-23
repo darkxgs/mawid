@@ -123,7 +123,7 @@ export function ManageView({
       <main className={cn("mx-auto px-4 pt-8 pb-16 sm:px-6", mode === "move" ? "max-w-6xl" : "max-w-md")}>
         <div className={cn(mode === "move" && "grid gap-10 lg:grid-cols-[380px_minmax(0,1fr)]")}>
           <div>
-            <h1 className="font-display text-[28px] leading-tight font-medium">{t.manage.title}</h1>
+            <h1 className="font-display text-[28px] leading-tight font-semibold">{t.manage.title}</h1>
             <Ticket
               className="mt-6"
               business={business}
@@ -173,7 +173,7 @@ export function ManageView({
               </div>
             ) : mode === "cancel" ? (
               <div className="mt-6 animate-rise rounded-panel border border-rose/25 bg-card p-5">
-                <p className="font-display text-[17px] font-medium">{t.manage.cancelAsk}</p>
+                <p className="font-display text-[17px] font-semibold">{t.manage.cancelAsk}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button variant="danger" onClick={cancel} disabled={pending}>
                     {pending ? <Spinner /> : null}
@@ -202,7 +202,7 @@ export function ManageView({
           {mode === "move" ? (
             <section aria-labelledby="move-title" className="min-w-0 lg:pt-14">
               <div className="flex items-center justify-between gap-4">
-                <h2 id="move-title" className="font-display text-[22px] font-medium">
+                <h2 id="move-title" className="font-display text-[22px] font-semibold">
                   {t.manage.moveTitle}
                 </h2>
                 <Button variant="ghost" size="sm" onClick={() => { setMode("view"); setSlot(null); }}>

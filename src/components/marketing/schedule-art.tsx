@@ -20,7 +20,7 @@ export function ScheduleArt({ className, withMessage = true }: { className?: str
     <div className={cn("relative select-none", className)} aria-hidden>
       <div className="rounded-[20px] border border-white/10 bg-white p-4 shadow-pop">
         <div className="mb-3 flex items-center justify-between">
-          <span className="font-display text-[15px] font-medium text-ink">Today</span>
+          <span className="font-display text-[15px] font-semibold text-ink">Today</span>
           <span className="tnum text-[12px] text-muted">14 booked</span>
         </div>
         <div className="grid grid-cols-[40px_repeat(3,1fr)] gap-x-2">
@@ -70,13 +70,27 @@ export function ScheduleArt({ className, withMessage = true }: { className?: str
   );
 }
 
-/** The reminder as the patient sees it in WhatsApp. */
-export function WhatsAppBubble({ className }: { className?: string }) {
+/** A message as the patient sees it in WhatsApp. */
+export function WhatsAppBubble({
+  className,
+  children,
+  time = "9:02",
+  dir = "rtl",
+}: {
+  className?: string;
+  children?: React.ReactNode;
+  time?: string;
+  dir?: "rtl" | "ltr";
+}) {
   return (
-    <div dir="rtl" lang="ar" className={cn("rounded-[16px] rounded-ss-[4px] bg-[#e2f7cb] px-3.5 pt-2.5 pb-2 text-[12.5px] leading-relaxed text-[#111b21] shadow-pop", className)}>
-      تذكير بموعدك في عيادة نور لطب الأسنان: فحص وتنظيف، الخميس 29 أكتوبر الساعة 4:30 م.
+    <div
+      dir={dir}
+      lang={dir === "rtl" ? "ar" : "en"}
+      className={cn("rounded-[14px] rounded-ss-[3px] bg-[#e2f7cb] px-3.5 pt-2.5 pb-2 text-[13px] leading-relaxed whitespace-pre-line text-[#111b21] shadow-[0_1px_1px_rgb(0_0_0/0.08)]", className)}
+    >
+      {children ?? "تذكير بموعدك في عيادة نور لطب الأسنان: فحص وتنظيف، الخميس 29 أكتوبر الساعة 4:30 م."}
       <span className="mt-1 flex items-center justify-end gap-1 text-[10.5px] text-[#667781]" dir="ltr">
-        9:02
+        {time}
         <CheckCheck className="size-3.5 text-[#53bdeb]" />
       </span>
     </div>

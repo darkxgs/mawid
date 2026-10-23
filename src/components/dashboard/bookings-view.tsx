@@ -154,7 +154,7 @@ export function BookingsView({
                       <td className="px-4 py-3">
                         <StatusBadge status={b.status} />
                       </td>
-                      <td className="tnum px-4 py-3 text-end whitespace-nowrap">{formatMoney(b.priceMinor, currency, "en")}</td>
+                      <td className="px-4 py-3 text-end whitespace-nowrap">{formatMoney(b.priceMinor, currency, "en")}</td>
                     </tr>
                   );
                 })}

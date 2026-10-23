@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand";
-import { Ticket } from "@/components/booking/ticket";
-import { ScheduleArt, WhatsAppBubble } from "@/components/marketing/schedule-art";
+import { BookingPreview } from "@/components/marketing/booking-preview";
+import { Photo } from "@/components/marketing/photo";
+import { WhatsAppBubble } from "@/components/marketing/schedule-art";
 import { buttonClass } from "@/components/ui";
-import type { PublicBusiness } from "@/server/public";
+import { HERO_FILM, PHOTOS } from "@/lib/media";
+import { renderMessage } from "@/lib/messages";
 import { demoLogin } from "./(auth)/actions";
 
 export const metadata: Metadata = {
@@ -13,178 +16,242 @@ export const metadata: Metadata = {
     "An Arabic-first booking page, WhatsApp reminders and one live schedule for your whole team. Built for clinics, salons and studios in the Gulf.",
 };
 
-// Static sample used only for the illustration in the hero.
-const SAMPLE: PublicBusiness = {
-  slug: "noor-dental",
-  name: "Noor Dental Clinic",
-  nameAr: "عيادة نور لطب الأسنان",
-  kind: "clinic",
-  tagline: null,
-  taglineAr: null,
-  address: null,
-  addressAr: null,
-  phone: null,
+const SAMPLE = {
+  customerName: "Mariam Al Hashimi",
+  businessName: "عيادة نور لطب الأسنان",
+  serviceName: "فحص وتنظيف",
+  staffName: "سارة نبيل",
+  startsAt: new Date("2026-10-29T12:30:00.000Z"),
   timezone: "Asia/Dubai",
-  currency: "AED",
-  defaultLocale: "ar",
-  maxAdvanceDays: 30,
-  holdMinutes: 5,
-  cancelWindowHours: 4,
-  services: [],
-  staff: [],
+  manageUrl: "mawid.vercel.app/m/7x97qh",
 };
 
-const STEPS = [
-  {
-    title: "Share one link",
-    body: "Put your booking page in your Instagram bio, WhatsApp Business profile and Google Maps. It opens in Arabic, with English one tap away.",
-  },
-  {
-    title: "Patients book in under a minute",
-    body: "They pick a service, see real free times and confirm with a mobile number. The time is held for them while they type, so nobody else can take it.",
-  },
-  {
-    title: "Mawid handles the rest",
-    body: "A WhatsApp confirmation goes out at once, reminders the day before and on the day, and the visit lands on your team's live schedule.",
-  },
-];
-
-const FEATURES = [
-  ["Booking page", "Arabic-first and right-to-left, with English one tap away. Free times reflect each person's hours, breaks, time off and the gap you need between visits."],
-  ["WhatsApp reminders", "Confirmations, day-before and same-day reminders, cancellations and new times, sent in the language the patient booked in. Every message is kept in an outbox."],
-  ["No double bookings", "Two people can press the same time at the same second. The database itself refuses the second one, so the diary can never hold an overlap."],
-  ["One live schedule", "Every chair side by side, a line for the current time, and one tap to mark a visit attended or missed. Phone and walk-in bookings go through the same checks."],
-  ["Insights", "Busiest hours, no-show rate, how many people booked online and how full each person's week was."],
-  ["An assistant at the desk", "Ask who's free on Thursday afternoon or move a patient to Saturday. It looks things up itself and waits for your approval before changing anything."],
-] as const;
-
 const ENGINEERING = [
-  ["Overlaps are impossible, not unlikely", "A Postgres exclusion constraint on each staff member's time range rejects any overlapping booking. A test fires five holds at the same slot at once and checks exactly one wins."],
-  ["Holds instead of race conditions", "Choosing a time creates a short-lived hold row. Expired holds are cleared only when someone else needs the time, so a slow patient can still confirm if nobody took it."],
-  ["Reminders that send once", "Each reminder is claimed with a conditional update before it is sent, so overlapping runs never message a patient twice. A daily cron and a throttled sweep after requests keep it on time."],
-  ["Time zones done properly", "Times are stored in UTC and computed in the business's own zone. Calendar days stay plain dates, so nothing drifts when a server runs elsewhere."],
+  ["Overlaps are impossible, not unlikely", "A Postgres exclusion constraint on each staff member's time range rejects any overlapping booking. A test fires five holds at the same slot at once and checks that exactly one wins."],
+  ["Holds instead of race conditions", "Choosing a time creates a short-lived hold. Expired holds are cleared only when someone else needs the time, so a slow patient can still confirm if nobody took it."],
+  ["Reminders that send once", "Each reminder is claimed with a conditional update before it is sent, so overlapping runs never message a patient twice."],
+  ["Time zones done properly", "Times are stored in UTC and computed in the business's own zone. Calendar days stay plain dates, so nothing drifts on a server elsewhere."],
 ] as const;
 
 export default function Home() {
   return (
-    <div className="min-h-dvh bg-paper">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Logo />
-        <nav className="flex items-center gap-2">
-          <a href="https://github.com/darkxgs/mawid" className="hidden h-9 items-center px-3 text-[14px] text-ink-2 hover:text-ink sm:inline-flex">
-            Source code
-          </a>
-          <Link href="/login" className={buttonClass("outline", "sm")}>
-            Sign in
-          </Link>
-        </nav>
-      </header>
+    <div className="min-h-dvh bg-white text-ink">
+      {/* ------------------------------------------------------------ hero */}
+      <section className="relative isolate flex min-h-[620px] flex-col overflow-hidden bg-ink text-white sm:h-[min(94svh,900px)]">
+        {HERO_FILM ? (
+          <video
+            className="absolute inset-0 -z-20 size-full object-cover"
+            src={HERO_FILM.src}
+            poster={PHOTOS.frontDesk.poster}
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden
+          />
+        ) : (
+          <Image src={PHOTOS.frontDesk.src} alt="" fill priority sizes="100vw" className="-z-20 object-cover" />
+        )}
+        {/* legibility scrim: darker where the type sits */}
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(11_33_38/0.92)_0%,rgb(11_33_38/0.55)_38%,rgb(11_33_38/0.15)_70%,rgb(11_33_38/0.35)_100%)]" />
 
-      <main>
-        <section className="mx-auto grid max-w-6xl items-center gap-14 px-5 pt-10 pb-20 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:pt-16 lg:pb-28">
-          <div>
-            <h1 className="font-display text-[44px] leading-[1.02] font-medium tracking-[-0.025em] text-balance sm:text-[60px]">
+        <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-10">
+          <Logo tone="white" />
+          <nav className="flex items-center gap-1">
+            <a href="https://github.com/darkxgs/mawid" className="hidden h-9 items-center px-3 text-[14px] text-white/80 hover:text-white sm:inline-flex">
+              Source
+            </a>
+            <Link href="/login" className="inline-flex h-9 items-center rounded-full bg-white/12 px-4 text-[14px] font-medium backdrop-blur-sm hover:bg-white/20">
+              Sign in
+            </Link>
+          </nav>
+        </header>
+
+        <div className="mx-auto mt-auto grid w-full max-w-7xl items-end gap-10 px-5 pb-12 sm:px-10 sm:pb-16 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="max-w-2xl">
+            <h1 className="font-display text-[46px] leading-[0.98] font-semibold tracking-[-0.035em] text-balance sm:text-[76px]">
               The front desk that never closes.
             </h1>
-            <p className="mt-6 max-w-[34rem] text-[18px] leading-relaxed text-ink-2">
-              Mawid gives your clinic or salon an Arabic-first booking page, WhatsApp reminders that cut no-shows, and one live schedule for the whole team.
+            <p className="mt-6 max-w-xl text-[18px] leading-relaxed text-white/80">
+              An Arabic-first booking page, WhatsApp reminders and one live schedule for your clinic or salon.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <form action={demoLogin}>
-                <button type="submit" className={buttonClass("primary", "lg")}>
+                <button type="submit" className={buttonClass("saffron", "lg", "px-6")}>
                   Open the demo clinic
                 </button>
               </form>
-              <Link href="/b/noor-dental" className={buttonClass("outline", "lg")}>
+              <Link href="/b/noor-dental" className="inline-flex h-12 items-center rounded-[12px] px-6 text-[15px] font-medium text-white ring-1 ring-white/40 ring-inset hover:bg-white/10">
                 Book as a patient
               </Link>
             </div>
-            <p className="mt-4 text-[14px] text-muted">The demo is a working clinic with four months of bookings. No sign-up.</p>
           </div>
+          <p dir="rtl" lang="ar" aria-hidden className="font-kufi hidden text-[150px] leading-[0.8] font-extrabold text-white/90 lg:block xl:text-[190px]">
+            موعد
+          </p>
+        </div>
+      </section>
 
-          <div className="relative">
-            <div className="absolute inset-0 -z-0 rounded-[32px] bg-ink" />
-            <div className="absolute inset-0 rounded-[32px] bg-[radial-gradient(90%_70%_at_85%_0%,#1d6b66_0%,transparent_60%)] opacity-80" />
-            <div className="relative p-6 sm:p-9">
-              <ScheduleArt className="max-w-[500px] max-sm:hidden" withMessage={false} />
-              <div className="mt-6 grid items-end gap-5 sm:-mt-28 sm:grid-cols-[minmax(0,1fr)_280px]">
-                <WhatsAppBubble className="w-full max-w-[250px] max-sm:order-2 sm:mb-10" />
-                <div dir="rtl" lang="ar">
-                  <Ticket
-                    business={SAMPLE}
-                    locale="ar"
-                    status="confirmed"
-                    code="7X97QH"
-                    service={{ id: "s", name: "Check-up & cleaning", nameAr: "فحص وتنظيف", description: null, descriptionAr: null, durationMin: 45, priceMinor: 25000 }}
-                    staff={{ id: "a", name: "Sara Nabil", nameAr: "سارة نبيل", title: null, titleAr: null, color: "#6B4E8C", serviceIds: [] }}
-                    start="2026-10-29T12:30:00.000Z"
-                    className="drop-shadow-[0_30px_40px_rgb(0_0_0/0.45)]"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      {/* ---------------------------------------------------- the old way */}
+      <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-2 lg:gap-20 lg:py-32">
+        <Photo photo={PHOTOS.paperCard} sizes="(min-width: 1024px) 50vw, 100vw" className="aspect-[3/2] rounded-[6px]" />
+        <div>
+          <h2 className="font-display text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
+            Most clinics still book on paper and phone calls.
+          </h2>
+          <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-2">
+            Every visit is a call, a line in the book, and a reminder somebody has to remember to send. Mawid moves all three onto one link your patients already know how to use.
+          </p>
+          <ol className="mt-10 grid gap-6 border-t border-ink/12 pt-8 sm:grid-cols-3">
+            {[
+              ["Share one link", "In your Instagram bio, WhatsApp profile and Google Maps."],
+              ["They book in a minute", "Real free times, in Arabic or English, held while they type."],
+              ["Mawid does the rest", "Confirmation and reminders on WhatsApp, straight onto your schedule."],
+            ].map(([t, b], i) => (
+              <li key={t}>
+                <span className="font-display tnum text-[13px] font-semibold text-sea">0{i + 1}</span>
+                <p className="mt-1.5 text-[16px] font-semibold">{t}</p>
+                <p className="mt-1 text-[14.5px] leading-relaxed text-muted">{b}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-        <section aria-labelledby="how" className="border-y border-mist bg-card">
-          <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-            <h2 id="how" className="font-display max-w-xl text-[32px] leading-tight font-medium tracking-[-0.02em]">
-              From a link in your bio to a full diary.
+      {/* ------------------------------------------------- booking page */}
+      <section className="bg-saffron">
+        <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:py-28">
+          <div>
+            <h2 className="font-display max-w-xl text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
+              A booking page patients finish, not abandon.
             </h2>
-            <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
-              {STEPS.map((s, i) => (
-                <li key={s.title} className="relative">
-                  <span className="font-display tnum text-[15px] font-medium text-sea">{i + 1}</span>
-                  <h3 className="mt-3 text-[19px] leading-snug font-medium">{s.title}</h3>
-                  <p className="mt-2 text-[15.5px] leading-relaxed text-ink-2">{s.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section aria-labelledby="inside" className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-            <h2 id="inside" className="font-display text-[32px] leading-tight font-medium tracking-[-0.02em] lg:sticky lg:top-10 lg:self-start">
-              Built for how people in the Gulf actually book.
-            </h2>
-            <dl className="divide-y divide-mist border-y border-mist">
-              {FEATURES.map(([title, body]) => (
-                <div key={title} className="grid gap-2 py-6 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-8">
-                  <dt className="text-[16px] font-medium">{title}</dt>
-                  <dd className="text-[15.5px] leading-relaxed text-ink-2">{body}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
-
-        <section aria-labelledby="hood" className="bg-ink text-white">
-          <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <h2 id="hood" className="font-display max-w-xl text-[32px] leading-tight font-medium tracking-[-0.02em]">
-                Under the hood
-              </h2>
-              <a href="https://github.com/darkxgs/mawid" className={buttonClass("saffron", "md")}>
-                Read the source
-              </a>
-            </div>
-            <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-white/70">
-              Next.js 16, React 19, Postgres with Drizzle, the AI SDK for the assistant. Bookings are correct because the database enforces it, and the tests prove it against a real Postgres engine.
+            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink/80">
+              It opens in Arabic, right to left, with English one tap away. Every time shown is genuinely free: hours, breaks, time off and cleaning gaps are already taken into account. Try the one on the right.
             </p>
-            <dl className="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">
-              {ENGINEERING.map(([title, body]) => (
-                <div key={title} className="border-t border-white/15 pt-5">
-                  <dt className="text-[17px] font-medium">{title}</dt>
-                  <dd className="mt-2 text-[15px] leading-relaxed text-white/70">{body}</dd>
+            <dl className="mt-10 grid max-w-xl gap-x-10 gap-y-6 sm:grid-cols-2">
+              {[
+                ["Held while they type", "The time is reserved for five minutes so nobody else takes it mid-booking."],
+                ["Change it themselves", "Every confirmation has a link to move or cancel, inside your policy."],
+                ["One link per service", "Send whitening patients straight to whitening."],
+                ["Calendar ready", "Add to Apple or Google Calendar in one tap."],
+              ].map(([t, b]) => (
+                <div key={t} className="border-t border-ink/20 pt-4">
+                  <dt className="text-[15.5px] font-semibold">{t}</dt>
+                  <dd className="mt-1 text-[14.5px] leading-relaxed text-ink/75">{b}</dd>
                 </div>
               ))}
             </dl>
           </div>
-        </section>
-      </main>
+          <BookingPreview className="justify-self-center lg:justify-self-end" />
+        </div>
+      </section>
 
-      <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-10 text-[14px] text-muted sm:px-8">
+      {/* ---------------------------------------------------- reminders */}
+      <section className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20 lg:py-32">
+        <div className="relative">
+          <Photo photo={PHOTOS.reminder} sizes="(min-width: 1024px) 42vw, 100vw" className="aspect-[4/5] rounded-[6px]" />
+          <WhatsAppBubble className="absolute -bottom-8 start-6 w-[min(300px,80%)] shadow-[0_18px_40px_-18px_rgb(0_0_0/0.5)] sm:start-auto sm:-end-10" time="9:02">
+            {renderMessage("reminder_24h", "ar", SAMPLE)}
+          </WhatsAppBubble>
+        </div>
+        <div className="max-sm:mt-10">
+          <h2 className="font-display text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
+            Reminders go out on their own, in their language.
+          </h2>
+          <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-2">
+            A confirmation the moment someone books. A reminder the day before and another on the day. If they move or cancel, they hear about it too. Arabic for patients who booked in Arabic, English for the rest.
+          </p>
+          <div className="mt-10 grid max-w-md gap-3">
+            <WhatsAppBubble dir="ltr" time="Tue 18:40">
+              {renderMessage("confirmation", "en", { ...SAMPLE, customerName: "James Whitaker", businessName: "Noor Dental Clinic", serviceName: "Teeth whitening", staffName: "Dr. Karim Youssef" })}
+            </WhatsAppBubble>
+          </div>
+          <p className="mt-6 text-[14px] text-muted">Every message is kept in the outbox, so the front desk can see exactly what a patient was sent.</p>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------- schedule */}
+      <section className="bg-ink text-white">
+        <div className="mx-auto max-w-7xl px-5 pt-24 sm:px-10 lg:pt-28">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+            <h2 className="font-display text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
+              Every chair on one live schedule.
+            </h2>
+            <p className="max-w-lg text-[17px] leading-relaxed text-white/70 lg:justify-self-end">
+              Online, phone and walk-in bookings land in the same place, with a line for the current time. One tap marks a visit attended or missed, and the numbers add themselves up.
+            </p>
+          </div>
+          <div className="mt-14 overflow-hidden rounded-t-[10px] ring-1 ring-white/10">
+            <Image
+              src="/product/dashboard-today.png"
+              alt="The Today screen: a timeline of appointments for three team members, with day totals above."
+              width={2560}
+              height={1640}
+              sizes="(min-width: 1280px) 1200px, 100vw"
+              className="h-auto w-full"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------- who it's for */}
+      <section className="mx-auto max-w-7xl px-5 py-24 sm:px-10 lg:py-32">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <figure>
+            <Photo photo={PHOTOS.barber} sizes="(min-width: 640px) 50vw, 100vw" className="aspect-[4/5] rounded-[6px]" />
+            <figcaption className="mt-3 text-[14px] text-muted">Barbers and salons: one link for every chair.</figcaption>
+          </figure>
+          <figure className="sm:mt-24">
+            <Photo photo={PHOTOS.waitingRoom} sizes="(min-width: 640px) 50vw, 100vw" className="aspect-[4/5] rounded-[6px]" />
+            <figcaption className="mt-3 text-[14px] text-muted">Clinics: fewer calls at the desk, fewer empty chairs.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------- under the hood */}
+      <section className="border-t border-ink/10 bg-paper">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <div>
+            <h2 className="font-display text-[30px] leading-[1.1] font-semibold tracking-[-0.03em]">Under the hood</h2>
+            <p className="mt-4 max-w-sm text-[16px] leading-relaxed text-ink-2">
+              Next.js 16, React 19, Postgres with Drizzle, and the AI SDK for the front-desk assistant. The database enforces the rules; the tests run against a real Postgres engine.
+            </p>
+            <a href="https://github.com/darkxgs/mawid" className={buttonClass("dark", "md", "mt-6")}>
+              Read the source
+            </a>
+          </div>
+          <dl className="grid gap-x-12 gap-y-8 sm:grid-cols-2">
+            {ENGINEERING.map(([t, b]) => (
+              <div key={t} className="border-t border-ink/15 pt-4">
+                <dt className="text-[16px] font-semibold">{t}</dt>
+                <dd className="mt-1.5 text-[14.5px] leading-relaxed text-ink-2">{b}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------- closing */}
+      <section className="relative isolate overflow-hidden bg-sea-deep text-white">
+        <Photo photo={PHOTOS.treatmentRoom} sizes="100vw" className="absolute inset-0 -z-10 opacity-35" />
+        <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-8 px-5 py-24 sm:px-10">
+          <h2 className="font-display max-w-2xl text-[34px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-[48px]">
+            See it from both sides of the desk.
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            <form action={demoLogin}>
+              <button type="submit" className={buttonClass("saffron", "lg", "px-6")}>
+                Open the demo clinic
+              </button>
+            </form>
+            <Link href="/b/noor-dental" className="inline-flex h-12 items-center rounded-[12px] px-6 text-[15px] font-medium ring-1 ring-white/50 ring-inset hover:bg-white/10">
+              Book as a patient
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-[14px] text-muted sm:px-10">
         <Logo />
         <p>
           Designed and built by{" "}

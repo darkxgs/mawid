@@ -56,7 +56,7 @@ export function TeamView({ team, services, weekStart }: { team: Member[]; servic
                   <Avatar name={m.name} color={m.color} size={40} />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2">
-                      <span className="font-display text-[17px] font-medium">{m.name}</span>
+                      <span className="font-display text-[17px] font-semibold">{m.name}</span>
                       {!m.active ? <Badge>Not taking bookings</Badge> : null}
                     </p>
                     <p className="truncate text-[13.5px] text-muted">
