@@ -1,9 +1,10 @@
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { getDb } from "@/db";
 import { getBusinessBySlug, getCatalog } from "@/server/catalog";
 import { getAvailability } from "@/server/bookings";
 import { errorResponse, serializeDays } from "@/server/public";
 import { isDateStr, localDate } from "@/lib/time";
+import { kickSweep } from "@/server/jobs";
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/b/[slug]/availability">) {
   const { slug } = await ctx.params;
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/b/[slug]/ava
     const from = isDateStr(fromParam) ? fromParam : localDate(now, business.timezone);
     const catalog = await getCatalog(db, business);
     const result = await getAvailability(db, business, catalog, { serviceId, staffId, from, days, now });
+    after(kickSweep);
     return Response.json(
       { days: serializeDays(result) },
       { headers: { "Cache-Control": "no-store" } },

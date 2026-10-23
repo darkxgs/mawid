@@ -218,6 +218,20 @@ export async function confirmHold(
   return row;
 }
 
+/** Give back a hold the customer walked away from, so others can take the time. */
+export async function releaseHold(db: DB, businessId: string, bookingId: string, token: string) {
+  await db
+    .delete(bookings)
+    .where(
+      and(
+        eq(bookings.id, bookingId),
+        eq(bookings.manageToken, token),
+        eq(bookings.businessId, businessId),
+        eq(bookings.status, "held"),
+      ),
+    );
+}
+
 export async function getBookingByToken(db: DB, token: string) {
   const [b] = await db.select().from(bookings).where(eq(bookings.manageToken, token)).limit(1);
   return b ?? null;
