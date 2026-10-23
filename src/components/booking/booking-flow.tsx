@@ -396,14 +396,18 @@ export function BusinessHeader({ business, locale, t, onSwitch }: { business: Pu
           <div className="absolute inset-x-0 top-0 mx-auto flex max-w-6xl justify-end px-4 pt-4 sm:px-6">{toggle}</div>
         </div>
       ) : null}
-      <div className={cn("mx-auto flex max-w-6xl items-end gap-4 px-4 sm:px-6", business.coverUrl ? "-mt-7" : "pt-6")}>
+      <div className={cn("mx-auto flex max-w-6xl items-start gap-4 px-4 sm:px-6", !business.coverUrl && "pt-6")}>
+        {/* Only the mark overlaps the photo; the name stays on the page for contrast. */}
         <span
           aria-hidden
-          className="font-display relative grid size-16 shrink-0 place-items-center rounded-[12px] bg-sea-deep text-[26px] font-bold text-white ring-4 ring-paper"
+          className={cn(
+            "font-display relative grid size-16 shrink-0 place-items-center rounded-[12px] bg-sea-deep text-[26px] font-bold text-white ring-4 ring-paper",
+            business.coverUrl && "-mt-8",
+          )}
         >
           {business.name.trim()[0]}
         </span>
-        <div className="min-w-0 flex-1 pb-0.5">
+        <div className={cn("min-w-0 flex-1", business.coverUrl ? "pt-3" : "pt-1")}>
           <p className="font-display truncate text-[20px] leading-tight font-semibold sm:text-[24px]">{name}</p>
           {tagline ? <p className="truncate text-[14px] text-muted">{tagline}</p> : null}
         </div>
