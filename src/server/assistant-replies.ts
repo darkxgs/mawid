@@ -386,7 +386,7 @@ async function stats(c: C, range: StatsRange): Promise<Reply> {
   const text = tr(
     c.l,
     `${label} (${span}): ${appts("en", st.appointments)} and ${money} in takings. ${plural(st.noShows, "no-show")}${st.appointments ? ` (${rate}%)` : ""} and ${st.cancelled} cancelled.`,
-    `${label} (${span}): ${apptAr(st.appointments)} وإيرادات ${money}. لم يحضر ${st.noShows}${st.appointments ? ` (${rate}%)` : ""}، وأُلغي ${st.cancelled}.`,
+    `${label} (${span}): ${apptAr(st.appointments)} وإيرادات ${money}، ولم يحضر ${st.noShows}${st.appointments ? ` (${rate}%)` : ""}، وأُلغي ${st.cancelled}.`,
   );
 
   const others: StatsRange[] = (["today", "week", "lastweek", "month", "lastmonth"] as StatsRange[]).filter((r) => r !== range).slice(0, 4);
