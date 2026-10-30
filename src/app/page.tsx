@@ -44,14 +44,17 @@ export default function Home() {
         {HERO_FILM ? (
           <video
             className="absolute inset-0 -z-20 size-full object-cover object-[72%_center] lg:object-center"
-            src={HERO_FILM.src}
             poster={PHOTOS.frontDesk.poster}
             autoPlay
             muted
             loop
             playsInline
+            preload="auto"
             aria-hidden
-          />
+          >
+            <source src={HERO_FILM.webm} type="video/webm" />
+            <source src={HERO_FILM.src} type="video/mp4" />
+          </video>
         ) : (
           <Image src={PHOTOS.frontDesk.src} alt="" fill priority sizes="100vw" className="-z-20 object-cover object-[72%_center] lg:object-center" />
         )}

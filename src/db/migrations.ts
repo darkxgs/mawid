@@ -188,4 +188,11 @@ UPDATE businesses SET cover_url = 'https://d8j0ntlcm91z4.cloudfront.net/user_3KE
   WHERE id = 'biz_demo';
 `,
   },
+  {
+    name: "0004_local_media",
+    sql: /* sql */ `
+UPDATE businesses SET cover_url = '/media/treatment-room.webp'
+  WHERE cover_url LIKE 'https://d8j0ntlcm91z4.cloudfront.net/%';
+`,
+  },
 ];

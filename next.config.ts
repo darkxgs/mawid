@@ -5,7 +5,10 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [{ protocol: "https", hostname: "d8j0ntlcm91z4.cloudfront.net", pathname: "/user_3KEzB9B3k7k7KvaEiefqwv7OPXv/**" }],
+  },
+  // Photos and the hero film rarely change; let browsers keep them for a week.
+  async headers() {
+    return [{ source: "/media/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] }];
   },
   // PGlite (local dev database) loads its WASM and extensions from disk at
   // runtime, so it must not be bundled.
